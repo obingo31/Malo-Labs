@@ -4,3 +4,6 @@
 [submodule "lib/properties"]
 	path = lib/properties
 	url = https://github.com/crytic/properties
+[submodule "contracts/lib/forge-std"]
+	path = contracts/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
