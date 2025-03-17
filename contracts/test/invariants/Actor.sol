@@ -5,7 +5,7 @@ import {IERC20} from "forge-std/interfaces/IERC20.sol";
 
 contract Actor {
     event ProxyCall(address indexed target, bool success, bytes returnData);
-    
+
     address public lastTarget;
     mapping(address => mapping(address => uint256)) public allowances;
     address[] internal approvedTokens;
@@ -14,17 +14,14 @@ contract Actor {
     constructor(address[] memory _tokens, address[] memory _contracts) payable {
         approvedTokens = _tokens;
         approvedContracts = _contracts;
-        
+
         // Batch approvals using multicall pattern
         for (uint256 i = 0; i < _tokens.length; i++) {
             _batchApprove(_tokens[i], _contracts);
         }
     }
 
-    function proxy(address _target, bytes memory _calldata) 
-        public 
-        returns (bool success, bytes memory returnData) 
-    {
+    function proxy(address _target, bytes memory _calldata) public returns (bool success, bytes memory returnData) {
         (success, returnData) = _target.call(_calldata);
         _handleCallResult(_target, success, returnData);
     }
@@ -48,12 +45,14 @@ contract Actor {
                 assembly {
                     errorSelector := mload(add(returnData, 0x20))
                 }
-                
+
                 // Handle common error types
-                if (errorSelector == 0x4e487b71) { // Panic error
+                if (errorSelector == 0x4e487b71) {
+                    // Panic error
                     uint256 code = abi.decode(returnData, (uint256));
                     require(false, string(abi.encodePacked("Panic: ", code)));
-                } else if (errorSelector == 0x08c379a0) { // Error(string)
+                } else if (errorSelector == 0x08c379a0) {
+                    // Error(string)
                     string memory message = abi.decode(returnData, (string));
                     require(false, message);
                 }

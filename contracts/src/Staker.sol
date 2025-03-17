@@ -99,7 +99,9 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
 
     function removeRewardToken(address rewardToken) external onlyRole(REWARDS_ADMIN_ROLE) {
         require(isRewardToken[rewardToken], "Not a reward token");
-        require(block.timestamp >= rewards[rewardToken].lastUpdateTime + rewards[rewardToken].duration, "Reward ongoing");
+        require(
+            block.timestamp >= rewards[rewardToken].lastUpdateTime + rewards[rewardToken].duration, "Reward ongoing"
+        );
 
         isRewardToken[rewardToken] = false;
         for (uint256 i = 0; i < rewardTokens.length; i++) {
@@ -143,7 +145,7 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
     }
 
     function earned(address user, address rewardToken) public view returns (uint256) {
-        Reward storage reward = rewards[rewardToken];
+        // Reward storage reward = rewards[rewardToken];
         uint256 userRewardPerToken = _rewardPerToken(rewardToken) - userRewardPerTokenPaid[user][rewardToken];
         return (_stakedBalances[user] * userRewardPerToken) / 1e18 + rewardsEarned[user][rewardToken];
     }

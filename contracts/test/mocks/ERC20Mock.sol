@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-
 contract ERC20Mock is ERC20 {
     uint8 private constant DECIMALS = 18;
 
@@ -13,7 +12,7 @@ contract ERC20Mock is ERC20 {
         _mint(to, amount);
     }
 
-    function decimals() public view override returns (uint8) {
+    function decimals() public pure override returns (uint8) {
         return DECIMALS;
     }
 }

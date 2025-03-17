@@ -1,0 +1,43 @@
+# echidna.yaml
+
+# Test mode - can be "property", "assertion", or "overflow"
+testMode: "assertion"
+
+# Don't allow fuzzer to use all functions
+# since we are using handlers
+allContracts: false
+
+# Prefix for property functions
+prefix: "property_"
+
+# Record fuzzer coverage
+corpusDir: "./coverage-echidna"
+
+# Number of test sequences to run
+testLimit: 10000
+
+# Maximum length of each test sequence
+seqLen: 100
+
+# Stop testing when a failure is found
+stopOnFail: true
+
+# Enable coverage guided testing
+coverage: true
+
+# Use Foundry for compilation
+cryticArgs: ["--foundry-compile-all"]
+
+# Explicitly list the functions that should be callable during testing
+filterFunctions: [
+  "handler_stake(uint256)",
+  "handler_withdraw(uint256)",
+  "handler_claimRewards()",
+  "handler_setRewardRate(uint256)",
+  "handler_setProtocolFee(uint256)",
+  "handler_setFeeRecipient(address)",
+  "handler_emergencyWithdraw()"
+]
+
+# Test contract - specify the contract to test
+contractAddr: "0x00a329c0648769a73afac7f9381e08fb43dbea72"

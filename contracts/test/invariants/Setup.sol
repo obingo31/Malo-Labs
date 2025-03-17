@@ -1,114 +1,111 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+// SPDX-License-Identifier: GPL-2.0
+pragma solidity ^0.8.20;
 
+// Dependencies
 import {BaseSetup} from "@chimera/BaseSetup.sol";
-import {IHevm} from "@chimera/Hevm.sol";
-import {Staking} from "src/Staking.sol";
+import {vm} from "@chimera/Hevm.sol";
+import {Constants} from "./Constants.sol";
+import {ExpectedErrors} from "./ExpectedErrors.sol";
 import {ERC20Mock} from "test/mocks/ERC20Mock.sol";
-import {Constants} from "src/Constants.sol";
+import {Staking} from "src/Staking.sol";
 
-abstract contract Setup is BaseSetup, Constants {
-    IHevm internal immutable hevm = IHevm(HEVM_ADDRESS);
-    
-    // Core protocol contracts
-    Staking public staking;
+// Managers
+import {ActorManager} from "../managers/ActorManager.sol";
+import {AssetManager} from "../managers/AssetManager.sol";
+
+abstract contract Setup is BaseSetup, ActorManager, AssetManager, Constants, ExpectedErrors {
+    // Contract instances
     ERC20Mock public stakingToken;
-    ERC20Mock public rewardToken;
+    ERC20Mock public maloToken;
+    Staking public staking;
 
-    // Ghost state tracking
-    struct GhostState {
-        uint256 totalStaked;
-        mapping(address => uint256) userStaked;
-        mapping(address => uint256) userRewards;
-        uint256 protocolFees;
-    }
-    
-    GhostState internal ghost;
+    // Addresses for the protocol
+    address public defaultGovernance;
+    address public techOpsMultisig;
 
-    // Test actors
-    address[] public actors;
-    address public constant ADMIN = ALICE;
-    address public constant FEE_RECEIVER = BOB;
-
-    // Initial parameters (using Constants)
-    uint256 public constant INITIAL_USER_BALANCE = INITIAL_BALANCE;
-    uint256 public constant INITIAL_REWARD_POOL = WHALE_ALLOCATION;
-
-    function generateActor(uint256 index) internal pure returns (address) {
-        return address(uint160(uint256(keccak256(abi.encodePacked("actor", index)))));
+    constructor() {
+        defaultGovernance = address(0x1111);
+        techOpsMultisig = address(0x2222);
     }
 
-    function setUp() public virtual override {
+    // Setup function
+    function setup() internal virtual override {
         _deployContracts();
-        _setupActors();
-        _fundAccounts();
-        _setupApprovals();
+        _setupActorsAndAssets();
+        _configurePermissions();
+        _initializeTokenBalances();
     }
 
-    function _deployContracts() internal {
+    // Deploy all required contracts
+    function _deployContracts() private {
         stakingToken = new ERC20Mock("Staking Token", "STK");
-        rewardToken = new ERC20Mock("Reward Token", "RWD");
-        
+        maloToken = new ERC20Mock("Malo Token", "MALO");
+
         staking = new Staking(
-            address(stakingToken),
-            address(rewardToken),
-            ADMIN,
-            REWARD_EPOCH,
-            FEE_RECEIVER
+            address(stakingToken), address(maloToken), address(defaultGovernance), REWARD_EPOCH, address(this)
         );
-
-        rewardToken.mint(address(staking), INITIAL_REWARD_POOL);
     }
 
-    function _setupActors() internal {
-        for (uint256 i = 1; i <= 3; i++) {
-            address actor = generateActor(i);
-            actors.push(actor);
-            hevm.deal(actor, 1e18); // Give each actor 1 ether
-        }
+    // Setup actors and assets
+    function _setupActorsAndAssets() private {
+        // Initialize actors
+        _addActor(ALICE);
+        _addActor(BOB);
+        _addActor(address(this));
+        _enableActor(address(this));
+
+        // Configure assets
+        _addAsset(address(stakingToken));
+        _addAsset(address(maloToken));
+        _enableAsset(address(stakingToken));
     }
 
-    function _fundAccounts() internal {
+    // Configure role-based permissions
+    function _configurePermissions() private {
+        // Grant roles using governance actor
+        vm.prank(address(defaultGovernance));
+        staking.grantRole(staking.DEFAULT_ADMIN_ROLE(), address(techOpsMultisig));
+
+        // Grant FEE_MANAGER_ROLE to default governance
+        vm.prank(address(defaultGovernance));
+        staking.grantRole(FEE_MANAGER_ROLE, address(defaultGovernance));
+
+        // Grant PAUSER_ROLE to techOpsMultisig
+        vm.prank(address(defaultGovernance));
+        staking.grantRole(PAUSER_ROLE, address(techOpsMultisig));
+    }
+
+    // Initialize token balances and approvals
+    function _initializeTokenBalances() private {
+        address[] memory actors = _getActors();
+
         for (uint256 i = 0; i < actors.length; i++) {
-            stakingToken.mint(actors[i], INITIAL_USER_BALANCE);
+            _mintTokens(actors[i]);
+            _approveAllowances(actors[i]);
         }
     }
 
-    function _setupApprovals() internal {
-        for (uint256 i = 0; i < actors.length; i++) {
-            hevm.prank(actors[i]);
-            stakingToken.approve(address(staking), MAX_UINT);
-        }
+    // Mint tokens to an actor
+    function _mintTokens(address actor) private {
+        vm.prank(actor);
+        stakingToken.mint(actor, INITIAL_BALANCE);
+
+        vm.prank(actor);
+        maloToken.mint(actor, INITIAL_BALANCE);
     }
 
-    // Ghost state management
-    function _updateGhostState(address user) internal {
-        ghost.totalStaked = staking.totalStaked();
-        ghost.userStaked[user] = staking.balanceOf(user);
-        ghost.userRewards[user] = staking.earned(user);
-        ghost.protocolFees = rewardToken.balanceOf(FEE_RECEIVER);
+    // Approve allowances for an actor
+    function _approveAllowances(address actor) private {
+        vm.prank(actor);
+        stakingToken.approve(address(staking), MAX_UINT);
+
+        vm.prank(actor);
+        maloToken.approve(address(staking), MAX_UINT);
     }
 
-    // Operation wrappers
-    function performStake(address user, uint256 amount) internal {
-        hevm.prank(user);
-        staking.stake(amount);
-        _updateGhostState(user);
-    }
-
-    function performWithdraw(address user, uint256 amount) internal {
-        hevm.prank(user);
-        staking.withdraw(amount);
-        _updateGhostState(user);
-    }
-
-    function performClaim(address user) internal {
-        hevm.prank(user);
-        staking.claimRewards();
-        _updateGhostState(user);
-    }
-
-    function _warp(uint256 time) internal {
-        hevm.warp(time);
+    // Modifier to execute a function as an actor
+    modifier asActor() {
+        vm.prank(_getActor());
+        _;
     }
 }

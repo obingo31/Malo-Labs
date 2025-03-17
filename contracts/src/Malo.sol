@@ -12,7 +12,7 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
 
     bytes32 public constant REWARDS_ADMIN_ROLE = keccak256("REWARDS_ADMIN_ROLE");
     bytes32 public constant LIQUIDITY_GUARDIAN_ROLE = keccak256("LIQUIDITY_GUARDIAN_ROLE");
-    
+
     IERC20 public immutable stakingToken;
     IERC20 public immutable malToken;
 
@@ -22,7 +22,7 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
     uint256 public periodFinish;
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
-    
+
     // Staking tracking
     uint256 private _totalStaked;
     mapping(address => uint256) private _balances;
@@ -49,12 +49,7 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
     event FeeConfigUpdated(uint256 newFeeBps, address newReceiver);
     event RewardParametersUpdated(uint256 newRate, uint256 duration, uint256 totalRewards);
 
-    constructor(
-        address _stakingToken,
-        address _malToken,
-        address _admin,
-        address _liquidityGuardian
-    ) {
+    constructor(address _stakingToken, address _malToken, address _admin, address _liquidityGuardian) {
         require(_stakingToken != address(0) && _malToken != address(0), "Zero address");
         require(_admin != address(0) && _liquidityGuardian != address(0), "Invalid roles");
 
@@ -72,7 +67,7 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
     function stake(uint256 amount) external nonReentrant whenNotPaused updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
-        
+
         _totalStaked += amount;
         _balances[msg.sender] += amount;
         lastStakeTime[msg.sender] = block.timestamp;
@@ -83,12 +78,12 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
 
     function withdraw(uint256 amount) public nonReentrant whenNotPaused updateReward(msg.sender) {
         require(amount > 0 && _balances[msg.sender] >= amount, "Invalid amount");
-        
+
         uint256 fee = 0;
         if (block.timestamp < lastStakeTime[msg.sender] + claimLockPeriod) {
             fee = (amount * withdrawalFeeBps) / MAX_FEE_BPS;
             amount -= fee;
-            if(fee > 0) stakingToken.safeTransfer(feeReceiver, fee);
+            if (fee > 0) stakingToken.safeTransfer(feeReceiver, fee);
         }
 
         _totalStaked -= (amount + fee);
@@ -98,8 +93,6 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
         emit Withdrawn(msg.sender, amount, fee);
     }
 
-    /// @notice Claim rewards and start vesting period
-    ///@param amount Amount to claim
     function claimRewards() public nonReentrant whenNotPaused updateReward(msg.sender) {
         uint256 totalReward = rewards[msg.sender];
         require(totalReward > 0, "No rewards");
@@ -140,16 +133,15 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
 
         malToken.safeTransferFrom(msg.sender, address(this), reward);
         lastUpdateTime = block.timestamp;
-        
+
         emit RewardAdded(reward);
         emit RewardParametersUpdated(rewardRate, periodFinish - block.timestamp, reward);
     }
 
-    function setFeeConfig(
-        uint256 newClaimFeeBps, 
-        uint256 newWithdrawalFeeBps, 
-        address newReceiver
-    ) external onlyRole(LIQUIDITY_GUARDIAN_ROLE) {
+    function setFeeConfig(uint256 newClaimFeeBps, uint256 newWithdrawalFeeBps, address newReceiver)
+        external
+        onlyRole(LIQUIDITY_GUARDIAN_ROLE)
+    {
         require(newClaimFeeBps <= MAX_FEE_BPS && newWithdrawalFeeBps <= MAX_FEE_BPS, "Fee too high");
         require(newReceiver != address(0), "Invalid receiver");
 
@@ -184,8 +176,8 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
     // Views ------------------------------------------------------------------
     function rewardPerToken() public view returns (uint256) {
         if (_totalStaked == 0) return rewardPerTokenStored;
-        uint256 timeElapsed = block.timestamp < periodFinish ? 
-            block.timestamp - lastUpdateTime : periodFinish - lastUpdateTime;
+        uint256 timeElapsed =
+            block.timestamp < periodFinish ? block.timestamp - lastUpdateTime : periodFinish - lastUpdateTime;
         return rewardPerTokenStored + (timeElapsed * rewardRate * 1e18) / _totalStaked;
     }
 
@@ -204,7 +196,7 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
         if (account != address(0)) {
             rewards[account] = earned(account);
             userRewardPerTokenPaid[account] = rewardPerTokenStored;
-            if(vestingStart[account] == 0) {
+            if (vestingStart[account] == 0) {
                 vestingStart[account] = block.timestamp;
                 totalVested[account] = rewards[account];
             }

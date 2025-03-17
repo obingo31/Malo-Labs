@@ -1,122 +1,93 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity 0.8.23;
 
-import {IAccessControl} from "@openzeppelin/contracts/interfaces/IAccessControl.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
-import {Properties} from "./Properties.sol";
-import {Errors} from "./Errors.sol";
+// import {Deploy} from "@script/Deploy.sol";
+import {Errors} from "src/libraries/Errors.sol";
+//import {Properties} from "./Properties.sol";
 
-abstract contract ExpectedErrors is Properties {
-    struct ErrorCategory {
-        bytes4[] selectors;
-        string name;
-    }
+abstract contract ExpectedErrors {
+    bool internal success;
+    bytes internal returnData;
 
-    mapping(bytes32 => ErrorCategory) private _errorCategories;
-
-    // Common error selectors
-    bytes4 public constant INSUFFICIENT_BALANCE = IERC20Errors.ERC20InsufficientBalance.selector;
-    bytes4 public constant UNAUTHORIZED = IAccessControl.AccessControlUnauthorizedAccount.selector;
+    bytes4[] internal DEPOSIT_ERRORS;
+    bytes4[] internal WITHDRAW_ERRORS;
+    bytes4[] internal STAKE_ERRORS;
+    bytes4[] internal CLAIM_REWARD_ERRORS;
+    bytes4[] internal EMERGENCY_WITHDRAW_ERRORS;
+    bytes4[] internal SET_FEE_ERRORS;
+    bytes4[] internal SET_REWARD_RATE_ERRORS;
+    bytes4[] internal SET_REWARD_PERIOD_ERRORS;
+    bytes4[] internal PAUSE_ERRORS;
+    bytes4[] internal UNPAUSE_ERRORS;
 
     constructor() {
-        _addCategory("Stake", _getStakeErrors());
-        _addCategory("Withdraw", _getWithdrawErrors());
-        _addCategory("ClaimRewards", _getClaimErrors());
-        _addCategory("EmergencyWithdraw", _getEmergencyErrors());
-        _addCategory("SetRewardRate", _getRewardRateErrors());
+        // DEPOSIT_ERRORS
+        DEPOSIT_ERRORS.push(IERC20Errors.ERC20InsufficientBalance.selector);
+        DEPOSIT_ERRORS.push(Errors.INVALID_TOKEN.selector);
+        DEPOSIT_ERRORS.push(Errors.NULL_AMOUNT.selector);
+        DEPOSIT_ERRORS.push(Errors.NULL_ADDRESS.selector);
+
+        // WITHDRAW_ERRORS
+        WITHDRAW_ERRORS.push(IERC20Errors.ERC20InsufficientBalance.selector);
+        WITHDRAW_ERRORS.push(Errors.NULL_AMOUNT.selector);
+        WITHDRAW_ERRORS.push(Errors.WITHDRAW_AMOUNT_EXCEEDS_BALANCE.selector);
+
+        // STAKE_ERRORS
+        STAKE_ERRORS.push(Errors.NULL_AMOUNT.selector);
+        STAKE_ERRORS.push(IERC20Errors.ERC20InsufficientBalance.selector);
+        STAKE_ERRORS.push(Errors.TRANSFER_FAILED.selector);
+        STAKE_ERRORS.push(Errors.STAKING_PAUSED.selector);
+
+        // CLAIM_REWARD_ERRORS
+        CLAIM_REWARD_ERRORS.push(Errors.NO_REWARDS_AVAILABLE.selector);
+        CLAIM_REWARD_ERRORS.push(Errors.TRANSFER_FAILED.selector);
+        CLAIM_REWARD_ERRORS.push(Errors.REWARDS_PERIOD_NOT_ENDED.selector);
+
+        // EMERGENCY_WITHDRAW_ERRORS
+        EMERGENCY_WITHDRAW_ERRORS.push(Errors.INSUFFICIENT_BALANCE.selector);
+        EMERGENCY_WITHDRAW_ERRORS.push(Errors.TRANSFER_FAILED.selector);
+        EMERGENCY_WITHDRAW_ERRORS.push(Errors.CONTRACT_PAUSED.selector);
+
+        // SET_FEE_ERRORS
+        SET_FEE_ERRORS.push(Errors.INVALID_FEE_AMOUNT.selector);
+        SET_FEE_ERRORS.push(IAccessControl.AccessControlUnauthorizedAccount.selector);
+
+        // SET_REWARD_RATE_ERRORS
+        SET_REWARD_RATE_ERRORS.push(Errors.INVALID_REWARD_RATE.selector);
+        SET_REWARD_RATE_ERRORS.push(Errors.INSUFFICIENT_BALANCE.selector);
+        SET_REWARD_RATE_ERRORS.push(Errors.ACTIVE_REWARDS_PERIOD.selector);
+
+        // SET_REWARD_PERIOD_ERRORS
+        SET_REWARD_PERIOD_ERRORS.push(Errors.INVALID_REWARD_PERIOD.selector);
+        SET_REWARD_PERIOD_ERRORS.push(Errors.ACTIVE_REWARDS_PERIOD.selector);
+
+        // PAUSE_ERRORS
+        PAUSE_ERRORS.push(IAccessControl.AccessControlUnauthorizedAccount.selector);
+        PAUSE_ERRORS.push(Errors.ALREADY_PAUSED.selector);
+
+        // UNPAUSE_ERRORS
+        UNPAUSE_ERRORS.push(IAccessControl.AccessControlUnauthorizedAccount.selector);
+        UNPAUSE_ERRORS.push(Errors.NOT_PAUSED.selector);
     }
 
-    function _getStakeErrors() private pure returns (bytes4[] memory) {
-        return [
-            Errors.ZeroAmount.selector,
-            INSUFFICIENT_BALANCE,
-            Errors.InsufficientAllowance.selector,
-            Errors.ContractPaused.selector,
-            UNAUTHORIZED
-        ];
-    }
+    modifier checkExpectedErrors(bytes4[] storage errors) {
+        success = false;
+        returnData = bytes("");
 
-    function _getWithdrawErrors() private pure returns (bytes4[] memory) {
-        return [
-            Errors.ZeroAmount.selector,
-            INSUFFICIENT_BALANCE,
-            Errors.ContractPaused.selector,
-            Errors.InsufficientBalance.selector
-        ];
-    }
+        _;
 
-    function _getClaimErrors() private pure returns (bytes4[] memory) {
-        return [
-            Errors.NoRewardsAvailable.selector,
-            Errors.ClaimLockActive.selector,
-            Errors.MaxDailyClaimExceeded.selector,
-            Errors.ContractPaused.selector
-        ];
-    }
-
-    function _getEmergencyErrors() private pure returns (bytes4[] memory) {
-        return [Errors.NoStakedBalance.selector, Errors.ContractNotPaused.selector, Errors.EmergencyLockActive.selector];
-    }
-
-    function _getRewardRateErrors() private pure returns (bytes4[] memory) {
-        return [
-            Errors.ActiveRewardsPeriod.selector,
-            Errors.RewardRateTooHigh.selector,
-            Errors.InsufficientRewardTokens.selector,
-            UNAUTHORIZED
-        ];
-    }
-
-    function _addCategory(string memory name, bytes4[] memory selectors) internal {
-        bytes32 categoryHash = keccak256(abi.encodePacked(name));
-        _errorCategories[categoryHash] = ErrorCategory(selectors, name);
-    }
-
-    function checkExpectedErrors(string memory category) internal view {
-        bytes32 categoryHash = keccak256(abi.encodePacked(category));
-        require(_errorCategories[categoryHash].selectors.length > 0, "Invalid error category");
-    }
-
-    function executeWithValidation(address target, bytes memory data, string memory category)
-        internal
-        returns (bytes memory)
-    {
-        (bool success, bytes memory result) = target.call(data);
         if (!success) {
-            bytes4 errSelector = _parseErrorSelector(result);
-            require(_isErrorInCategory(errSelector, category), _buildErrorMessage(category, errSelector));
+            bool expected = false;
+            for (uint256 i = 0; i < errors.length; i++) {
+                if (errors[i] == bytes4(returnData)) {
+                    expected = true;
+                    break;
+                }
+            }
+            require(expected, "Unexpected error encountered");
+            // precondition(false);
         }
-        return result;
-    }
-
-    function _isErrorInCategory(bytes4 selector, string memory category) internal view returns (bool) {
-        bytes32 categoryHash = keccak256(abi.encodePacked(category));
-        return _isErrorRegistered(selector, _errorCategories[categoryHash].selectors);
-    }
-
-    function _isErrorRegistered(bytes4 selector, bytes4[] storage registered) internal view returns (bool) {
-        for (uint256 i = 0; i < registered.length; i++) {
-            if (selector == registered[i]) return true;
-        }
-        return false;
-    }
-
-    function _parseErrorSelector(bytes memory data) internal pure returns (bytes4) {
-        return data.length >= 4 ? bytes4(data) : bytes4(0);
-    }
-
-    function _buildErrorMessage(string memory category, bytes4 selector) internal pure returns (string memory) {
-        return string(abi.encodePacked("Unexpected error in ", category, ": 0x", _bytes4ToHex(selector)));
-    }
-
-    function _bytes4ToHex(bytes4 selector) internal pure returns (string memory) {
-        bytes memory hexChars = "0123456789ABCDEF";
-        bytes memory result = new bytes(8);
-
-        for (uint256 i = 0; i < 4; i++) {
-            result[i * 2] = hexChars[uint8(selector[i] >> 4)];
-            result[i * 2 + 1] = hexChars[uint8(selector[i] & 0x0f)];
-        }
-        return string(result);
     }
 }

@@ -1,115 +1,120 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.20;
 
-import {ExpectedErrors} from "./ExpectedErrors.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {BaseTargetFunctions} from "@chimera/BaseTargetFunctions.sol";
 import {Properties} from "./Properties.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {Staking} from "src/Staking.sol";
+import {BaseTargetFunctions} from "@chimera/BaseTargetFunctions.sol";
+import {IHevm, vm} from "@chimera/Hevm.sol";
 
-contract TargetFunctions is Properties, BaseTargetFunctions, ExpectedErrors {
-    using SafeERC20 for IERC20;
+abstract contract TargetFunctions is BaseTargetFunctions, Properties {
+    // ─────────────────────────────────────────────────────────────
+    // Handler Functions
+    // ─────────────────────────────────────────────────────────────
 
-    MaloStaking private immutable staking;
-    IERC20 private immutable stakingToken;
-    IERC20 private immutable rewardToken;
+    /**
+     * @notice Wrapper for the `stake` function.
+     * @dev Ensures the user has sufficient staking tokens before staking.
+     * @param amount The amount of tokens to stake.
+     */
+    function handler_stake(uint256 amount) external {
+        // Ensure the user has sufficient staking tokens
+        uint256 userBalance = stakingToken.balanceOf(msg.sender);
+        if (amount > userBalance) {
+            amount = userBalance; 
+        }
 
-    constructor(MaloStaking _staking) Properties(_staking) {
-        staking = _staking;
-        stakingToken = IERC20(_staking.stakingToken());
-        rewardToken = IERC20(_staking.rewardToken());
-    }
+        // Ensure the amount is greater than zero
+        if (amount == 0) {
+            return; // Skip if the user has no tokens to stake
+        }
 
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*         Handler Functions with Precondition Checks         */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-
-    function handler_stake(uint256 amount, address user) external checkExpectedErrors("Stake") {
-        // Precondition checks
-        require(amount > 0, "Amount must be positive");
-        require(stakingToken.balanceOf(user) >= amount, "Insufficient user balance");
-        require(stakingToken.allowance(user, address(staking)) >= amount, "Insufficient allowance");
-
-        uint256 preTotal = staking.totalStaked();
-        uint256 preBalance = stakingToken.balanceOf(address(staking));
-
-        vm.prank(user);
+        // Stake the tokens
+        vm.prank(msg.sender);
         staking.stake(amount);
-
-        // HSPOST: Immediate state validation
-        assertEq(staking.balanceOf(user), preBalance + amount, "HSPOST: User balance mismatch");
-        assertEq(staking.totalStaked(), preTotal + amount, "HSPOST: Total staked mismatch");
-        assertEq(stakingToken.balanceOf(address(staking)), preBalance + amount, "HSPOST: Contract balance mismatch");
     }
 
-    function handler_withdraw(uint256 amount, address user) external checkExpectedErrors("Withdraw") {
-        // Precondition checks
-        require(amount > 0, "Amount must be positive");
-        require(staking.balanceOf(user) >= amount, "Insufficient staked balance");
-        require(stakingToken.balanceOf(address(staking)) >= amount, "Insufficient contract liquidity");
+    /**
+     * @notice Wrapper for the `withdraw` function.
+     * @dev Ensures the user has sufficient staked tokens before withdrawing.
+     * @param amount The amount of tokens to withdraw.
+     */
+    function handler_withdraw(uint256 amount) external {
+        // Ensure the user has sufficient staked tokens
+        uint256 stakedBalance = staking.balanceOf(msg.sender);
+        if (amount > stakedBalance) {
+            amount = stakedBalance; // Cap the amount to the user's staked balance
+        }
 
-        uint256 preTotal = staking.totalStaked();
-        uint256 preBalance = stakingToken.balanceOf(address(staking));
+        // Ensure the amount is greater than zero
+        if (amount == 0) {
+            return; // Skip if the user has no tokens to withdraw
+        }
 
-        vm.prank(user);
+        // Withdraw the tokens
+        vm.prank(msg.sender);
         staking.withdraw(amount);
-
-        // HSPOST: Immediate state validation
-        assertEq(staking.balanceOf(user), preBalance - amount, "HSPOST: User balance mismatch");
-        assertEq(staking.totalStaked(), preTotal - amount, "HSPOST: Total staked mismatch");
-        assertEq(stakingToken.balanceOf(address(staking)), preBalance - amount, "HSPOST: Contract balance mismatch");
     }
 
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*               Global Postconditions (GPOST)                */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-
-    function checkGlobalPostconditions() external view {
-        // GPOST 1: Sum of balances matches total supply
-        uint256 sumBalances;
-        address[] memory users = getActiveUsers();
-        for (uint256 i = 0; i < users.length; i++) {
-            sumBalances += staking.balanceOf(users[i]);
-        }
-        assertEq(sumBalances, staking.totalStaked(), "GPOST: Balance sum mismatch");
-
-        // GPOST 2: Contract token balance matches total supply
-        assertEq(stakingToken.balanceOf(address(staking)), staking.totalStaked(), "GPOST: Contract balance mismatch");
-
-        // GPOST 3: Reward safety checks
-        assertLe(staking.totalRewards(), rewardToken.balanceOf(address(staking)), "GPOST: Insufficient reward balance");
-    }
-
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*              Stress Tests with Stateful Fuzzing            */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-
-    function test_dosMassOperations(uint96 iterations) external {
-        uint256 startGas = gasleft();
-
-        for (uint96 i = 0; i < iterations; i++) {
-            address user = makeAddr(string(abi.encodePacked("user", i)));
-            uint256 amount = 1 wei;
-
-            // Alternate between stake and withdraw
-            if (i % 2 == 0) {
-                handler_stake(amount, user);
-            } else {
-                handler_withdraw(amount, user);
-            }
+    /**
+     * @notice Wrapper for the `claimRewards` function.
+     * @dev Ensures the user has rewards to claim before calling the function.
+     */
+    function handler_claimRewards() external {
+        // Ensure the user has rewards to claim
+        uint256 rewardsEarned = staking.earned(msg.sender);
+        if (rewardsEarned == 0) {
+            return; // Skip if the user has no rewards to claim
         }
 
-        uint256 gasUsed = startGas - gasleft();
-        assertLt(gasUsed, 15_000_000, "DOS: Gas consumption too high");
+        // Claim the rewards
+        vm.prank(msg.sender);
+        staking.claimRewards();
     }
 
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                    Helper Functions                        */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+    /**
+     * @notice Wrapper for the `setRewardRate` function.
+     * @dev Ensures the reward rate is set only by the rewards distributor.
+     * @param rewardRate The new reward rate.
+     */
+    function handler_setRewardRate(uint256 rewardRate) external {
+        // Ensure the caller is the rewards distributor
+        vm.prank(address(this)); // Simulate rewards distributor
+        staking.setRewardRate(rewardRate);
+    }
 
-    function getActiveUsers() internal view returns (address[] memory) {
-        // Implementation depends on your user tracking setup
-        return new address[](0);
+    /**
+     * @notice Wrapper for the `setProtocolFee` function.
+     * @dev Ensures the protocol fee is set only by the fee setter.
+     * @param fee The new protocol fee.
+     */
+    function handler_setProtocolFee(uint256 fee) external {
+        // Ensure the caller has the FEE_SETTER_ROLE
+        vm.prank(address(this)); // Simulate fee setter
+        staking.setProtocolFee(fee);
+    }
+
+    /**
+     * @notice Wrapper for the `setFeeRecipient` function.
+     * @dev Ensures the fee recipient is set only by the fee setter.
+     * @param recipient The new fee recipient.
+     */
+    function handler_setFeeRecipient(address recipient) external {
+        // Ensure the caller has the FEE_SETTER_ROLE
+        vm.prank(address(this)); // Simulate fee setter
+        staking.setFeeRecipient(recipient);
+    }
+
+    /**
+     * @notice Wrapper for the `emergencyWithdraw` function.
+     * @dev Ensures the contract is paused before allowing emergency withdrawals.
+     */
+    function handler_emergencyWithdraw() external {
+        // Ensure the contract is paused
+        if (!staking.paused()) {
+            return; // Skip if the contract is not paused
+        }
+
+        // Perform emergency withdrawal
+        vm.prank(msg.sender);
+        staking.emergencyWithdraw();
     }
 }

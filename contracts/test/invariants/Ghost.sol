@@ -1,149 +1,75 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.20;
 
+import {Asserts} from "@chimera/Asserts.sol";
 import {Staking} from "src/Staking.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Properties} from "./Properties.sol";
 
-contract Ghost is Properties {
-    // Tracked protocol ghost state
-    struct GhostState {
-        uint256 totalStakedGhost;
-        uint256 totalRewardsGhost;
-        uint256 protocolFeesGhost;
-        mapping(address => uint256) userStakedGhost;
-        mapping(address => uint256) userRewardsGhost;
-        mapping(address => uint256) lastUpdateGhost;
-    }
-
-    GhostState private ghost;
-    MaloStaking private staking;
-    IERC20 private stakingToken;
-    IERC20 private rewardToken;
-
-    // Snapshot tracking
-    struct Snapshot {
+abstract contract Ghosts is Asserts {
+    struct StakingVars {
         uint256 totalStaked;
         uint256 totalRewards;
         uint256 protocolFees;
+        uint256 lastUpdateTime;
+        uint256 periodFinish;
+        mapping(address => uint256) userStakes;
+        mapping(address => uint256) userRewards;
     }
 
-    Snapshot private preOpSnapshot;
+    StakingVars internal _before;
+    StakingVars internal _after;
 
-    constructor(MaloStaking _staking, IERC20 _stakingToken, IERC20 _rewardToken) {
+    Staking public staking;
+    IERC20 public stakingToken;
+    IERC20 public rewardToken;
+
+    constructor(Staking _staking, IERC20 _stakingToken, IERC20 _rewardToken) {
         staking = _staking;
         stakingToken = _stakingToken;
         rewardToken = _rewardToken;
+        _snapshot(_before);
     }
 
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                      TEST HOOKS                           */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-
-    function _beforeEach() internal {
-        ghost.totalStakedGhost = staking.totalStaked();
-        ghost.totalRewardsGhost = staking.totalRewards();
-        ghost.protocolFeesGhost = 0;
-
-        // Reset user tracking
-        address[] memory users = getActors();
-        for (uint256 i = 0; i < users.length; i++) {
-            address user = users[i];
-            ghost.userStakedGhost[user] = staking.balanceOf(user);
-            ghost.userRewardsGhost[user] = staking.earned(user);
-            ghost.lastUpdateGhost[user] = block.timestamp;
-        }
-
-        _snapshotState();
+    modifier trackState() {
+        _snapshot(_before);
+        _;
+        _snapshot(_after);
+        _;
     }
 
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                      GHOST OPERATIONS                     */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-
-    function ghostStake(address user, uint256 amount) external {
-        ghost.userStakedGhost[user] += amount;
-        ghost.totalStakedGhost += amount;
-        _updateUserRewards(user);
+    function _snapshot(StakingVars storage vars) internal {
+        vars.totalStaked = staking.totalStaked();
+        vars.totalRewards = rewardToken.balanceOf(address(staking));
+        vars.protocolFees = 0; // Track separately
+        vars.lastUpdateTime = staking.lastUpdateTime();
+        vars.periodFinish = staking.periodFinish();
     }
 
-    function ghostWithdraw(address user, uint256 amount) external {
-        ghost.userStakedGhost[user] -= amount;
-        ghost.totalStakedGhost -= amount;
-        _updateUserRewards(user);
+    function _updateUserState(address user) internal {
+        _before.userStakes[user] = staking.balanceOf(user);
+        _before.userRewards[user] = staking.earned(user);
     }
 
-    function ghostClaim(address user) external {
-        uint256 rewards = ghost.userRewardsGhost[user];
-        uint256 fee = (rewards * staking.protocolFee()) / 10000;
-
-        ghost.userRewardsGhost[user] = 0;
-        ghost.totalRewardsGhost -= rewards;
-        ghost.protocolFeesGhost += fee;
-        _updateUserRewards(user);
+    // Ghost state transitions
+    function _ghostStake(address user, uint256 amount) internal {
+        _after.totalStaked += amount;
+        _after.userStakes[user] += amount;
     }
 
-    function ghostEmergencyWithdraw(address user) external {
-        uint256 amount = ghost.userStakedGhost[user];
-        ghost.userStakedGhost[user] = 0;
-        ghost.totalStakedGhost -= amount;
-        ghost.userRewardsGhost[user] = 0;
+    function _ghostWithdraw(address user, uint256 amount) internal {
+        _after.totalStaked -= amount;
+        _after.userStakes[user] -= amount;
     }
 
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                      INVARIANTS                           */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+    function _ghostClaim(address user) internal {
+        uint256 reward = _after.userRewards[user];
+        uint256 fee = (reward * staking.protocolFee()) / 1000;
 
-    function invariant_totalStaked() external view {
-        assertEq(staking.totalStaked(), ghost.totalStakedGhost, "Total staked mismatch");
+        _after.totalRewards -= (reward - fee);
+        _after.protocolFees += fee;
+        _after.userRewards[user] = 0;
     }
 
-    function invariant_userBalances(address user) external view {
-        assertEq(staking.balanceOf(user), ghost.userStakedGhost[user], "User balance mismatch");
-    }
-
-    function invariant_rewardAccounting() external view {
-        assertEq(
-            staking.totalRewards(), ghost.totalRewardsGhost + ghost.protocolFeesGhost, "Reward accounting mismatch"
-        );
-    }
-
-    function invariant_protocolFees() external view {
-        assertEq(rewardToken.balanceOf(address(this)), ghost.protocolFeesGhost, "Protocol fee mismatch");
-    }
-
-    function invariant_emergencyWithdrawReset() external view {
-        Snapshot memory current = _currentSnapshot();
-        assertEq(current.totalStaked, preOpSnapshot.totalStaked, "Emergency withdraw total mismatch");
-    }
-
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                      INTERNAL HELPERS                     */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-
-    function _updateUserRewards(address user) private {
-        uint256 timeElapsed = block.timestamp - ghost.lastUpdateGhost[user];
-        if (timeElapsed > 0 && ghost.totalStakedGhost > 0) {
-            uint256 reward = (ghost.userStakedGhost[user] * staking.rewardRate() * timeElapsed) / ghost.totalStakedGhost;
-            ghost.userRewardsGhost[user] += reward;
-            ghost.totalRewardsGhost += reward;
-        }
-        ghost.lastUpdateGhost[user] = block.timestamp;
-    }
-
-    function _snapshotState() private {
-        preOpSnapshot = Snapshot({
-            totalStaked: staking.totalStaked(),
-            totalRewards: staking.totalRewards(),
-            protocolFees: rewardToken.balanceOf(address(this))
-        });
-    }
-
-    function _currentSnapshot() private view returns (Snapshot memory) {
-        return Snapshot({
-            totalStaked: staking.totalStaked(),
-            totalRewards: staking.totalRewards(),
-            protocolFees: rewardToken.balanceOf(address(this))
-        });
-    }
+    // Utility for tests
+    function _getActors() internal view virtual returns (address[] memory);
 }

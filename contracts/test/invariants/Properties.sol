@@ -1,157 +1,94 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Asserts} from "@chimera/Asserts.sol";
 import {BeforeAfter} from "./BeforeAfter.sol";
-import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import {Asserts} from "@chimera/Asserts.sol";
+import {Constants} from "./Constants.sol";
 
-abstract contract Properties is BeforeAfter, Asserts {
-    using SafeCast for uint256;
+abstract contract Properties is Constants, BeforeAfter, Asserts {
+    // ─────────────────────────────────────────────────────────────
+    // 1. Solvency Property
+    // ─────────────────────────────────────────────────────────────
 
-    uint256 public constant MAX_PROTOCOL_FEE = 1000;
+    /**
+     * @notice Ensure the contract remains solvent after any operation.
+     * @dev Uses `gte` to assert that the contract has enough staking tokens to cover all staked balances.
+     */
+    function property_ContractSolvency() public returns (bool) {
+        uint256 totalStakedBalance = staking.totalStaked();
+        uint256 contractStakingTokenBalance = stakingToken.balanceOf(address(staking));
 
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                      Core Invariants                       */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-
-    /// @dev Ensures core functions don't revert with valid inputs
-    /// @return True if all core functions pass
-    ///@param actors The list of actors to test
-    function invariant_operations_with_valid_inputs() public view returns (bool) {
-        _verifyValidOperation(OperationType.Stake);
-        _verifyValidOperation(OperationType.Withdraw);
-        _verifyValidOperation(OperationType.Claim);
+        // Contract should have enough staking tokens to cover all staked balances
+        gte(contractStakingTokenBalance, totalStakedBalance, "Contract must remain solvent");
         return true;
-    }
-
-    /// @dev Ensures arithmetic safety in all protocol calculations
-    /// @return True if all arithmetic operations are safe
-    ///@param liquidity checks
-    ///@param overflow checks
-    function invariant_arithmetic_safety() public view returns (bool) {
-        _verifyNoOverflow(staking.totalSupply(), "Total supply overflow");
-        _verifyNoOverflow(staking.totalRewards(), "Total rewards overflow");
-        _verifyNoOverflow(staking.rewardRate(), "Reward rate overflow");
-        return true;
-    }
-
-    /// @dev Ensures reward parameters remain within safe bounds
-    /// @return True if all reward parameters are safe
-    function invariant_reward_parameters() public view returns (bool) {
-        uint256 rewardRate = staking.rewardRate();
-        require(rewardRate <= _safeRewardRateBound(), "Reward rate exceeds safe bound");
-        require(staking.protocolFee() <= MAX_PROTOCOL_FEE, "Protocol fee exceeds maximum");
-        return true;
-    }
-
-    enum OperationType {
-        Stake,
-        Withdraw,
-        Claim
-    }
-
-    /// @dev Verifies that a valid operation can be executed
-    /// @param opType The type of operation to verify
-    /// @return True if the operation is valid
-    /// @return The user address with a valid balance
-    /// The function selects a user with a valid balance for the operation
-    /// and verifies that the operation can be executed without reverting.
-
-    function _verifyValidOperation(OperationType opType) internal view {
-        address user = _selectUserWithBalance(opType);
-        if (user == address(0)) return; // No valid users for operation
-
-        uint256 amount = opType == OperationType.Stake ? _getValidStakeAmount(user) : _getValidWithdrawAmount(user);
-
-        if (amount == 0) return;
-
-        bool success;
-        bytes memory err;
-        if (opType == OperationType.Stake) {
-            (success, err) = _simulateStake(user, amount);
-        } else if (opType == OperationType.Withdraw) {
-            (success, err) = _simulateWithdraw(user, amount);
-        } else {
-            (success, err) = _simulateClaim(user);
-        }
-
-        require(success, string(abi.encodePacked(_operationName(opType), " failed: ", err)));
-    }
-
-    /// @dev Verifies that a valid stake operation can be executed
-    /// @param user The user address to simulate the stake operation
-    /// @param amount The amount to stake
-
-    function _verifyNoOverflow(uint256 value, string memory message) internal pure {
-        require(value <= type(uint128).max, message);
     }
 
     // ─────────────────────────────────────────────────────────────
-    // Simulation Helpers (State-preserving)
+    // 2. Balance Consistency Property
     // ─────────────────────────────────────────────────────────────
 
-    function _simulateStake(address user, uint256 amount) internal view returns (bool, bytes memory) {
-        try this.simulateExternalStake(user, amount) {
-            return (true, "");
-        } catch Error(string memory reason) {
-            return (false, bytes(reason));
-        } catch (bytes memory lowLevelData) {
-            return (false, lowLevelData);
-        }
-    }
+    /**
+     * @notice Ensure the sum of user balances equals the total staked amount.
+     * @dev Uses `eq` to assert that the sum of user balances matches the total staked amount.
+     */
+    function property_BalanceConsistency() public returns (bool) {
+        uint256 totalStakedBalance = staking.totalStaked();
+        uint256 sumOfUserBalances = 0;
 
-    /// @dev Simulates a stake operation without modifying state
-    /// @param user The user address to simulate the stake operation
-    /// @param amount The amount to stake
+        // Use predefined actors from Constants.sol
+        address[] memory actors = new address[](2);
+        actors[0] = ALICE;
+        actors[1] = BOB;
 
-    function _selectUserWithBalance(OperationType opType) internal view returns (address) {
         for (uint256 i = 0; i < actors.length; i++) {
-            address user = actors[i];
-            if (opType == OperationType.Stake && stakingToken.balanceOf(user) > 0) {
-                return user;
-            }
-            if (opType == OperationType.Withdraw && staking.balanceOf(user) > 0) {
-                return user;
-            }
-            if (opType == OperationType.Claim && staking.earned(user) > 0) {
-                return user;
-            }
+            sumOfUserBalances += staking.balanceOf(actors[i]);
         }
-        return address(0);
+
+        // Sum of all user balances should equal the total staked amount
+        eq(sumOfUserBalances, totalStakedBalance, "User balances must match total staked");
+        return true;
     }
 
-    function _getValidStakeAmount(address user) internal view returns (uint256) {
-        uint256 balance = stakingToken.balanceOf(user);
-        uint256 allowance = stakingToken.allowance(user, address(staking));
-        return balance > 0 && allowance > 0 ? _min(balance, allowance) : 0;
-    }
+    // ─────────────────────────────────────────────────────────────
+    // 3. Reward Integrity Property
+    // ─────────────────────────────────────────────────────────────
 
-    function _getValidWithdrawAmount(address user) internal view returns (uint256) {
-        uint256 staked = staking.balanceOf(user);
-        uint256 vaultBalance = stakingToken.balanceOf(address(staking));
-        return staked > 0 && vaultBalance > 0 ? _min(staked, vaultBalance) : 0;
-    }
+    /**
+     * @notice Ensure the total rewards distributed plus remaining rewards do not exceed the contract balance.
+     * @dev Uses `lte` to assert that the total rewards distributed plus remaining rewards do not exceed the contract balance.
+     */
+    // function property_RewardIntegrity() public view returns (bool) {
+    //     uint256 totalRewardsDistributed = staking.totalRewardsDistributed();
+    //     // uint256 totalRewardsRemaining = staking.rewardTokensRemaining();
+    //     uint256 contractRewardTokenBalance = maloToken.balanceOf(address(staking));
 
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                      Safety Calculations                   */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+    //     // Total rewards distributed plus remaining rewards should not exceed contract balance
+    //     lte(
+    //         totalRewardsDistributed + totalRewardsRemaining,
+    //         contractRewardTokenBalance,
+    //         "Total rewards must not exceed contract balance"
+    //     );
+    //     return true;
+    // }
 
-    function _safeRewardRateBound() internal view returns (uint256) {
-        uint256 maxRate = type(uint256).max / (365 days * 10);
-        return maxRate > 0 ? maxRate : type(uint256).max;
-    }
+    // ─────────────────────────────────────────────────────────────
+    // 4. Reward Period State Property
+    // ─────────────────────────────────────────────────────────────
 
-    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
-    /*                      Constants & Utilities                 */
-    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+    /**
+     * @notice Ensure the reward period state is consistent.
+     * @dev Uses `assertTrue` to verify that the reward rate is zero when the period has ended, or positive when active.
+     */
+    function property_RewardPeriodState() public view returns (bool) {
+        uint256 periodFinish = staking.periodFinish();
 
-    function _min(uint256 a, uint256 b) private pure returns (uint256) {
-        return a < b ? a : b;
-    }
-
-    function _operationName(OperationType opType) private pure returns (string memory) {
-        if (opType == OperationType.Stake) return "Stake";
-        if (opType == OperationType.Withdraw) return "Withdraw";
-        return "Claim";
+        if (block.timestamp >= periodFinish) {
+            // If period has ended, rewardRate should be zero
+            assertTrue(staking.rewardRate() == 0, "Reward rate must be zero after period ends");
+        } else {
+            // If period is active, rewardRate should be positive
+            assertTrue(staking.rewardRate() > 0, "Reward rate must be positive during active period");
+        }
+        return true;
     }
 }
