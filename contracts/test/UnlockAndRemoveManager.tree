@@ -1,0 +1,16 @@
+UnlockAndRemoveManagerTest::unlockAndRemoveManager
+├── Given lock does not exist
+│   └── It should revert with CannotUnlock
+└── Given lock exists
+    ├── When caller is unauthorized
+    │   └── It should revert with CannotUnlock
+    ├── When called by user
+    │   ├── It should delete the lock entry
+    │   ├── It should reduce total locked amount
+    │   ├── It should emit LockAmountChanged(0)
+    │   └── It should emit LockManagerRemoved
+    └── When called by lock manager
+        ├── It should delete the lock entry
+        ├── It should reduce total locked amount
+        ├── It should emit LockAmountChanged(0)
+        └── It should emit LockManagerRemoved

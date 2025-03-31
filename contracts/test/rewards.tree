@@ -1,0 +1,8 @@
+RewardsTest::claimRewards
+├── When no rewards accumulated
+│   └── It should revert with NoRewardsAvailable
+├── When protocol fee is 5 percent
+│   ├── It should deduct correct fee
+│   └── It should send fee to recipient
+└── When partial reward period passed
+    └── It should calculate prorated rewards

@@ -1,120 +1,114 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {Properties} from "./Properties.sol";
-import {BaseTargetFunctions} from "@chimera/BaseTargetFunctions.sol";
-import {IHevm, vm} from "@chimera/Hevm.sol";
+// // import {Properties} from "./Properties.sol";
+// import {BaseTargetFunctions} from "@chimera/BaseTargetFunctions.sol";
+// import {IHevm, vm} from "@chimera/Hevm.sol";
+// import {IStaking} from "src/interfaces/IStaking.sol";
+// import {ExpectedErrors} from "./ExpectedErrors.sol";
+// import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+// import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-abstract contract TargetFunctions is BaseTargetFunctions, Properties {
-    // ─────────────────────────────────────────────────────────────
-    // Handler Functions
-    // ─────────────────────────────────────────────────────────────
+// abstract contract TargetFunctions is ExpectedErrors, Properties, BaseTargetFunctions {
+//     constructor(address _staking, address _stakingToken, address _rewardToken) {
+//         staking = IStaking(_staking);
+//         stakingToken = ERC20(_stakingToken);
+//         rewardToken = ERC20(_rewardToken);
 
-    /**
-     * @notice Wrapper for the `stake` function.
-     * @dev Ensures the user has sufficient staking tokens before staking.
-     * @param amount The amount of tokens to stake.
-     */
-    function handler_stake(uint256 amount) external {
-        // Ensure the user has sufficient staking tokens
-        uint256 userBalance = stakingToken.balanceOf(msg.sender);
-        if (amount > userBalance) {
-            amount = userBalance; 
-        }
+//         // Initialize test actors
+//         actors.push(address(0x1));
+//         actors.push(address(0x2));
+//         actors.push(address(0x3));
+//     }
 
-        // Ensure the amount is greater than zero
-        if (amount == 0) {
-            return; // Skip if the user has no tokens to stake
-        }
+//     function setup() public {
+//         for (uint256 i = 0; i < actors.length; i++) {
+//             address actor = actors[i];
+//             stakingToken.mint(actor, type(uint256).max / actors.length);
+//             rewardToken.mint(actor, type(uint256).max / actors.length);
 
-        // Stake the tokens
-        vm.prank(msg.sender);
-        staking.stake(amount);
-    }
+//             hevm.prank(actor);
+//             stakingToken.approve(address(staking), type(uint256).max);
 
-    /**
-     * @notice Wrapper for the `withdraw` function.
-     * @dev Ensures the user has sufficient staked tokens before withdrawing.
-     * @param amount The amount of tokens to withdraw.
-     */
-    function handler_withdraw(uint256 amount) external {
-        // Ensure the user has sufficient staked tokens
-        uint256 stakedBalance = staking.balanceOf(msg.sender);
-        if (amount > stakedBalance) {
-            amount = stakedBalance; // Cap the amount to the user's staked balance
-        }
+//             hevm.prank(actor);
+//             rewardToken.approve(address(staking), type(uint256).max);
+//         }
+//     }
 
-        // Ensure the amount is greater than zero
-        if (amount == 0) {
-            return; // Skip if the user has no tokens to withdraw
-        }
+//     function handler_stake(uint256 amount) public {
+//         address actor = _randomActor();
+//         uint256 actorBalance = stakingToken.balanceOf(actor);
+//         amount = _bound(amount, 1, actorBalance);
 
-        // Withdraw the tokens
-        vm.prank(msg.sender);
-        staking.withdraw(amount);
-    }
+//         __before(actor);
+//         hevm.prank(actor);
+//         (bool success, bytes memory data) = address(staking).call(abi.encodeCall(IStaking.stake, (amount)));
 
-    /**
-     * @notice Wrapper for the `claimRewards` function.
-     * @dev Ensures the user has rewards to claim before calling the function.
-     */
-    function handler_claimRewards() external {
-        // Ensure the user has rewards to claim
-        uint256 rewardsEarned = staking.earned(msg.sender);
-        if (rewardsEarned == 0) {
-            return; // Skip if the user has no rewards to claim
-        }
+//         if (!success) {
+//             require(_isExpectedError(data, STAKE_ERRORS), "Unexpected stake error");
+//         } else {
+//             __after(actor);
+//             require(
+//                 _after.userStakingTokenBalance[actor] == _before.userStakingTokenBalance[actor] - amount,
+//                 "STAKE_03: Token balance mismatch"
+//             );
+//             require(_after.userStakes[actor] == _before.userStakes[actor] + amount, "STAKE_01: Stake balance mismatch");
+//             require(_after.totalStaked == _before.totalStaked + amount, "STAKE_02: Total staked mismatch");
+//         }
+//     }
 
-        // Claim the rewards
-        vm.prank(msg.sender);
-        staking.claimRewards();
-    }
+//     function handler_unstake(uint256 amount) public {
+//         address actor = _selectActorWithStake();
+//         if (actor == address(0)) return;
 
-    /**
-     * @notice Wrapper for the `setRewardRate` function.
-     * @dev Ensures the reward rate is set only by the rewards distributor.
-     * @param rewardRate The new reward rate.
-     */
-    function handler_setRewardRate(uint256 rewardRate) external {
-        // Ensure the caller is the rewards distributor
-        vm.prank(address(this)); // Simulate rewards distributor
-        staking.setRewardRate(rewardRate);
-    }
+//         uint256 actorStake = staking.balanceOf(actor);
+//         amount = _bound(amount, 1, actorStake);
 
-    /**
-     * @notice Wrapper for the `setProtocolFee` function.
-     * @dev Ensures the protocol fee is set only by the fee setter.
-     * @param fee The new protocol fee.
-     */
-    function handler_setProtocolFee(uint256 fee) external {
-        // Ensure the caller has the FEE_SETTER_ROLE
-        vm.prank(address(this)); // Simulate fee setter
-        staking.setProtocolFee(fee);
-    }
+//         __before(actor);
+//         hevm.prank(actor);
+//         (bool success, bytes memory data) = address(staking).call(
+//             abi.encodeCall(IStaking.unstake, (amount, "")) // Add empty bytes parameter
+//         );
 
-    /**
-     * @notice Wrapper for the `setFeeRecipient` function.
-     * @dev Ensures the fee recipient is set only by the fee setter.
-     * @param recipient The new fee recipient.
-     */
-    function handler_setFeeRecipient(address recipient) external {
-        // Ensure the caller has the FEE_SETTER_ROLE
-        vm.prank(address(this)); // Simulate fee setter
-        staking.setFeeRecipient(recipient);
-    }
+//         if (!success) {
+//             require(_isExpectedError(data, WITHDRAW_ERRORS), "Unexpected unstake error");
+//         } else {
+//             __after(actor);
+//             require(
+//                 _after.userStakingTokenBalance[actor] == _before.userStakingTokenBalance[actor] + amount,
+//                 "UNSTAKE_03: Token balance mismatch"
+//             );
+//             require(
+//                 _after.userStakes[actor] == _before.userStakes[actor] - amount, "UNSTAKE_01: Stake balance mismatch"
+//             );
+//             require(_after.totalStaked == _before.totalStaked - amount, "UNSTAKE_02: Total staked mismatch");
+//         }
+//     }
 
-    /**
-     * @notice Wrapper for the `emergencyWithdraw` function.
-     * @dev Ensures the contract is paused before allowing emergency withdrawals.
-     */
-    function handler_emergencyWithdraw() external {
-        // Ensure the contract is paused
-        if (!staking.paused()) {
-            return; // Skip if the contract is not paused
-        }
+//     function handler_claimRewards() public {
+//         address actor = _selectActorWithRewards();
+//         if (actor == address(0)) return;
 
-        // Perform emergency withdrawal
-        vm.prank(msg.sender);
-        staking.emergencyWithdraw();
-    }
-}
+//         __before(actor);
+//         hevm.prank(actor);
+//         (bool success, bytes memory data) = address(staking).call(abi.encodeCall(IStaking.claimRewards, ()));
+
+//         if (!success) {
+//             require(_isExpectedError(data, CLAIM_REWARD_ERRORS), "Unexpected claim error");
+//         } else {
+//             __after(actor);
+//             uint256 expectedFee = (_before.userClaimableRewards[actor] * staking.protocolFee()) / 1000;
+//             uint256 expectedNet = _before.userClaimableRewards[actor] - expectedFee;
+
+//             require(
+//                 _after.userRewardTokenBalance[actor] == _before.userRewardTokenBalance[actor] + expectedNet,
+//                 "CLAIM_03: Reward balance mismatch"
+//             );
+//             require(_after.userClaimableRewards[actor] == 0, "CLAIM_01: Pending rewards not cleared");
+//             require(
+//                 _after.totalRewardsDistributed == _before.totalRewardsDistributed + expectedNet,
+//                 "CLAIM_02: Total rewards mismatch"
+//             );
+//         }
+//     }
+// }

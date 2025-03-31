@@ -1,93 +1,73 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {BeforeAfter} from "./BeforeAfter.sol";
 import {Asserts} from "@chimera/Asserts.sol";
-import {Constants} from "./Constants.sol";
 
-abstract contract Properties is Constants, BeforeAfter, Asserts {
-    // ─────────────────────────────────────────────────────────────
-    // 1. Solvency Property
-    // ─────────────────────────────────────────────────────────────
+import {BeforeAfter} from "./BeforeAfter.sol";
+import {PropertiesSpecifications} from "./PropertiesSpecifications.sol";
 
-    /**
-     * @notice Ensure the contract remains solvent after any operation.
-     * @dev Uses `gte` to assert that the contract has enough staking tokens to cover all staked balances.
-     */
-    function property_ContractSolvency() public returns (bool) {
-        uint256 totalStakedBalance = staking.totalStaked();
-        uint256 contractStakingTokenBalance = stakingToken.balanceOf(address(staking));
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IStaking} from "src/interfaces/IStaking.sol";
 
-        // Contract should have enough staking tokens to cover all staked balances
-        gte(contractStakingTokenBalance, totalStakedBalance, "Contract must remain solvent");
-        return true;
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // 2. Balance Consistency Property
-    // ─────────────────────────────────────────────────────────────
-
-    /**
-     * @notice Ensure the sum of user balances equals the total staked amount.
-     * @dev Uses `eq` to assert that the sum of user balances matches the total staked amount.
-     */
-    function property_BalanceConsistency() public returns (bool) {
-        uint256 totalStakedBalance = staking.totalStaked();
-        uint256 sumOfUserBalances = 0;
-
-        // Use predefined actors from Constants.sol
-        address[] memory actors = new address[](2);
-        actors[0] = ALICE;
-        actors[1] = BOB;
+abstract contract Properties is Asserts, PropertiesSpecifications, BeforeAfter {
+    function property_STAKED_BALANCES() public updateGhosts returns (bool) {
+        address[] memory actors = _getActors();
+        uint256 totalStaked = 0;
 
         for (uint256 i = 0; i < actors.length; i++) {
-            sumOfUserBalances += staking.balanceOf(actors[i]);
+            uint256 balance = staking.balanceOf(actors[i]);
+
+            // Assert that the balance is non-negative
+            gte(balance, 0, "STAKED_02: Balance must be non-negative");
+
+            totalStaked += balance;
         }
 
-        // Sum of all user balances should equal the total staked amount
-        eq(sumOfUserBalances, totalStakedBalance, "User balances must match total staked");
+        // Assert that the total staked matches the sum of individual balances
+        eq(staking.totalStaked(), totalStaked, "STAKED_01: Total staked does not match individual balances");
         return true;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // 3. Reward Integrity Property
-    // ─────────────────────────────────────────────────────────────
+    function property_REWARD_ACCOUNTING() public updateGhosts returns (bool) {
+        if (staking.totalStaked() > 0) {
+            uint256 timeElapsed = block.timestamp - _before.lastUpdateTime;
+            uint256 calculatedRewards = timeElapsed * staking.rewardRate();
 
-    /**
-     * @notice Ensure the total rewards distributed plus remaining rewards do not exceed the contract balance.
-     * @dev Uses `lte` to assert that the total rewards distributed plus remaining rewards do not exceed the contract balance.
-     */
-    // function property_RewardIntegrity() public view returns (bool) {
-    //     uint256 totalRewardsDistributed = staking.totalRewardsDistributed();
-    //     // uint256 totalRewardsRemaining = staking.rewardTokensRemaining();
-    //     uint256 contractRewardTokenBalance = maloToken.balanceOf(address(staking));
-
-    //     // Total rewards distributed plus remaining rewards should not exceed contract balance
-    //     lte(
-    //         totalRewardsDistributed + totalRewardsRemaining,
-    //         contractRewardTokenBalance,
-    //         "Total rewards must not exceed contract balance"
-    //     );
-    //     return true;
-    // }
-
-    // ─────────────────────────────────────────────────────────────
-    // 4. Reward Period State Property
-    // ─────────────────────────────────────────────────────────────
-
-    /**
-     * @notice Ensure the reward period state is consistent.
-     * @dev Uses `assertTrue` to verify that the reward rate is zero when the period has ended, or positive when active.
-     */
-    function property_RewardPeriodState() public view returns (bool) {
-        uint256 periodFinish = staking.periodFinish();
-
-        if (block.timestamp >= periodFinish) {
-            // If period has ended, rewardRate should be zero
-            assertTrue(staking.rewardRate() == 0, "Reward rate must be zero after period ends");
+            // Assert that the rewards distributed match the calculated rewards
+            eq(
+                _after.totalRewardsDistributed - _before.totalRewardsDistributed,
+                calculatedRewards,
+                "REWARD_03: Rewards accounting mismatch"
+            );
         } else {
-            // If period is active, rewardRate should be positive
-            assertTrue(staking.rewardRate() > 0, "Reward rate must be positive during active period");
+            // Assert that rewards should not be distributed if no tokens are staked
+            eq(
+                _after.totalRewardsDistributed,
+                _before.totalRewardsDistributed,
+                "REWARD_04: Rewards distributed without any tokens staked"
+            );
+        }
+        return true;
+    }
+
+    function property_FEE_HANDLING() public updateGhosts returns (bool) {
+        // Assert that protocol fee does not exceed the maximum allowed fee
+        lte(staking.protocolFee(), staking.MAX_FEE(), FEE_01);
+        uint256 expectedFees =
+            (_after.totalRewardsDistributed - _before.totalRewardsDistributed) * staking.protocolFee() / 1000;
+
+        // Assert that the fee recipient's balance is updated correctly
+        eq(
+            staking.feeRecipient().balance,
+            _before.feeRecipientBalance + expectedFees,
+            "FEE_02: Fee recipient's balance mismatch"
+        );
+        return true;
+    }
+
+    function property_ACCESS_CONTROL() public updateGhosts returns (bool) {
+        if (_after.protocolFee != _before.protocolFee) {
+            t(staking.hasRole(staking.FEE_SETTER_ROLE(), address(this)), "ACCESS_02: Caller lacks FEE_SETTER_ROLE");
         }
         return true;
     }

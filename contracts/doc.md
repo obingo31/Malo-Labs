@@ -5,7 +5,6 @@ Advanced Actor-Based Testing for Secure Staking Systems
 Table of Contents
 Running the Suite
 
-Prerequisites
 
 Execution Modes
 
@@ -14,6 +13,8 @@ Configurations
 Property Definitions
 
 Invariants
+
+Actor based Invariants
 
 Postconditions
 

@@ -1,0 +1,12 @@
+LockTest::lock
+├── When amount is zero
+│   └── It should revert with ZeroAmount
+├── When user has insufficient unlocked balance
+│   └── It should revert with InsufficientBalance
+├── When lock manager has no existing allowance
+│   └── It should revert with LockDoesNotExist
+├── When new amount exceeds allowance
+│   └── It should revert with InsufficientAllowance
+└── When valid parameters
+    ├── It should increase the locked amount
+    └── It should emit LockAmountChanged

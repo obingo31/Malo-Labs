@@ -1,0 +1,14 @@
+UnlockTest::unlock
+├── Given amount is zero
+│   └── It should revert with ZeroAmount
+└── Given amount is non-zero
+    ├── When caller is unauthorized
+    │   └── It should revert with CannotUnlock
+    ├── When locked amount is insufficient
+    │   └── It should revert with CannotUnlock
+    ├── When called by user with valid parameters
+    │   ├── It should decrease locked amount
+    │   └── It should emit LockAmountChanged
+    └── When called by lock manager with valid parameters
+        ├── It should decrease locked amount
+        └── It should emit LockAmountChanged

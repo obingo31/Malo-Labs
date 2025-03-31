@@ -1,0 +1,7 @@
+StakingTest::stake
+├── When staking tokens
+│   └── It should update the user's balance
+├── When staking zero tokens
+│   └── It should revert
+└── When staking on behalf of another user
+    └── It should update the target user's balance

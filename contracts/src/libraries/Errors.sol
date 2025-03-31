@@ -57,4 +57,29 @@ library Errors {
 
     // DOS error
     error DOS();
+
+    // Access control errors
+    error AccessControlUnauthorizedAccount();
+    error UnauthorizedAccess();
+    error NotAuthorized();
+
+    // Locks
+    error LockAlreadyExists();
+    error LockNotFound();
+    error LockNotActive();
+    error LockNotExpired();
+    error LockExpired();
+    error LockNotActiveOrExpired();
+    error LockActive();
+    error LockDoesNotExist();
+    error CannotUnlock();
+    error LockedTokensExist();
+    error LockedTokens();
+
+    // Allowance errors
+    error AllowanceNotZero();
+    error AllowanceNotMax();
+    error AllowanceNotMaxOrZero();
+    error AllowanceCannotBeZero();
+    error InsufficientLock();
 }

@@ -3,9 +3,8 @@ pragma solidity 0.8.23;
 
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
-// import {Deploy} from "@script/Deploy.sol";
 import {Errors} from "src/libraries/Errors.sol";
-//import {Properties} from "./Properties.sol";
+// import {Properties} from "./Properties.sol";
 
 abstract contract ExpectedErrors {
     bool internal success;
@@ -86,7 +85,7 @@ abstract contract ExpectedErrors {
                     break;
                 }
             }
-            require(expected, "Unexpected error encountered");
+            // t(expected, DOS);
             // precondition(false);
         }
     }

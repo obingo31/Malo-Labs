@@ -25,8 +25,4 @@ abstract contract RewardsDistributionRecipient {
     function setRewardsDistribution(address _rewardsDistribution) external virtual {
         rewardsDistribution = _rewardsDistribution;
     }
-
-    //     function rewardTokensRemaining() public view returns (uint256) {
-    //     return maloToken.balanceOf(address(this)) - totalRewardsDistributed;
-    // }
 }

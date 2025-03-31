@@ -13,7 +13,6 @@ import {Errors} from "src/libraries/Errors.sol";
 abstract contract ActorManager is BaseSetup {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    // Custom errors that are not in the Errors library
     error ActorNotAdded();
     error DefaultActor();
     error NoDifferentActor();
@@ -51,7 +50,7 @@ abstract contract ActorManager is BaseSetup {
         return actors[entropy % actors.length];
     }
 
-    function _getActors() internal view returns (address[] memory) {
+    function _getActors() internal view virtual returns (address[] memory) {
         return _actors.values();
     }
 
@@ -82,6 +81,8 @@ abstract contract ActorManager is BaseSetup {
 
     function _switchActor(uint256 entropy) internal {
         _disableActor();
-        _enableActor(_actors.at(entropy % _actors.length()));
+
+        address target = _actors.at(entropy % _actors.length());
+        _enableActor(target);
     }
 }
