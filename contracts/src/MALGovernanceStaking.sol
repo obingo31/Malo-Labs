@@ -16,7 +16,8 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant POLICY_MANAGER_ROLE = keccak256("POLICY_MANAGER_ROLE");
 
     // Token contracts
-    IVotes public immutable malGovernanceToken;
+    IERC20 public immutable malGovernanceToken; // For transfers
+    IVotes public immutable malGovernanceVotes;  // For voting
     IERC20 public immutable malUtilityToken;
 
     // Governance parameters
@@ -66,7 +67,8 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
     error InvalidPercentage();
 
     constructor(address _governanceToken, address _utilityToken, address _daoMultisig) {
-        malGovernanceToken = IVotes(_governanceToken);
+        malGovernanceToken = IERC20(_governanceToken);
+        malGovernanceVotes = IVotes(_governanceToken);
         malUtilityToken = IERC20(_utilityToken);
 
         _grantRole(DEFAULT_ADMIN_ROLE, _daoMultisig);
@@ -83,7 +85,7 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         _stakedBalances[msg.sender] += amount;
         lastStakeTime[msg.sender] = block.timestamp;
 
-        // malGovernanceToken.safeTransferFrom(msg.sender, address(this), amount);
+        malGovernanceToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
     }
 
@@ -98,13 +100,13 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         _totalStaked -= amount;
         _stakedBalances[msg.sender] -= amount;
 
-        // malGovernanceToken.safeTransfer(msg.sender, amount);
+        malGovernanceToken.safeTransfer(msg.sender, amount);
         emit Withdrawn(msg.sender, amount);
     }
 
     // Governance functions
     function createProposal(address target, bytes calldata data) external returns (uint256) {
-        if (malGovernanceToken.getVotes(msg.sender) < proposalThreshold) revert NoVotingPower();
+        if (malGovernanceVotes.getVotes(msg.sender) < proposalThreshold) revert NoVotingPower();
 
         uint256 proposalId = ++proposalCount;
         proposals[proposalId] = Proposal({
@@ -127,7 +129,7 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         if (block.timestamp > proposal.endTime) revert VotingClosed();
         if (hasVoted[msg.sender][proposalId]) revert AlreadyVoted();
 
-        uint256 power = malGovernanceToken.getVotes(msg.sender);
+        uint256 power = malGovernanceVotes.getVotes(msg.sender);
         if (power == 0) revert NoVotingPower();
 
         if (support) {
@@ -197,15 +199,15 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
     // Internal functions
     function _updateDelegation(address user, bool isStaking) internal {
         if (isStaking) {
-            malGovernanceToken.delegate(user);
+            malGovernanceVotes.delegate(user);
         } else {
-            malGovernanceToken.delegate(address(0));
+            malGovernanceVotes.delegate(address(0));
         }
     }
 
     // View functions
     function getVotingPower(address citizen) external view returns (uint256) {
-        return malGovernanceToken.getVotes(citizen);
+        return malGovernanceVotes.getVotes(citizen);
     }
 
     function totalStaked() external view returns (uint256) {

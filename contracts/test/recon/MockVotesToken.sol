@@ -33,7 +33,7 @@ contract MockVotesToken is ERC20, IVotes {
     function delegate(address delegatee) public override {
         require(delegatee != address(0), "Cannot delegate to zero address");
         address currentDelegate = delegates(msg.sender);
-        
+
         if (currentDelegate != delegatee) {
             uint256 amount = balanceOf(msg.sender);
             _moveVotingPower(currentDelegate, delegatee, amount);

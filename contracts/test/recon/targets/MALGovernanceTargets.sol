@@ -102,8 +102,8 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         _stakedBalances[msg.sender] += amount;
         lastStakeTime[msg.sender] = block.timestamp;
 
-        // Transfer tokens from the user to the contract
-        malGovernanceToken.safeTransferFrom(msg.sender, address(this), amount);
+        // Transfer tokens from the user to the contract by casting to IERC20
+        IERC20(address(malGovernanceToken)).safeTransferFrom(msg.sender, address(this), amount);
 
         // Delegate voting power when staking
         _updateDelegation(msg.sender, true);
@@ -127,8 +127,8 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         _totalStaked -= amount;
         _stakedBalances[msg.sender] -= amount;
 
-        // Transfer tokens back to the user
-        malGovernanceToken.safeTransfer(msg.sender, amount);
+        // Transfer tokens back to the user by casting to IERC20
+        IERC20(address(malGovernanceToken)).safeTransfer(msg.sender, amount);
 
         emit Withdrawn(msg.sender, amount);
     }

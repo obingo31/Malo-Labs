@@ -16,7 +16,7 @@ contract CryticToFoundry is Test, TargetFunctions, FoundryAsserts {
 
     // Example test that gets called by the fuzzer.
     // Replace or extend this with failing property tests for debugging.
-    function test_crytic() public {
+    function test_crytic() public view {
         // As an example, we assert that total staked is non-negative.
         // This invariant should always hold; adjust the invariant to your needs.
         assertTrue(malGovernanceStaking.totalStaked() >= 0, "totalStaked should be non-negative");
