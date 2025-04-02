@@ -20,3 +20,6 @@ echidna
 crytic-export
 slither_results.json
 .medusacache
+coverage/
+call_sequences/
+test_results/
