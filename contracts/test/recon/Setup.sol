@@ -26,7 +26,7 @@ abstract contract Setup is BaseSetup, ActorManager, AssetManager, Utils {
         daoMultisig = _getActors()[0];
 
         // Deploy and cast tokens
-        governanceToken = token; // Use MockVotesToken for governanceToken
+        governanceToken = token; 
         utilityToken = IERC20(_newAsset(18));
 
         // Deploy governance staking contract with address casting
