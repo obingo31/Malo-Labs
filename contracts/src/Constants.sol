@@ -26,9 +26,18 @@ abstract contract Constants {
     /// @notice Role for governance decisions
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
-    // ─────────────────────────────────────────────────────────────
-    //  Mathematical Constants
-    // ─────────────────────────────────────────────────────────────
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                        Echidna                             */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+    /// @notice Address of the Echidna testing framework
+    address constant USER1 = address(0x10000);
+    address constant USER2 = address(0x20000);
+    address constant USER3 = address(0x30000);
+    uint256 constant INITIAL_BALANCE = 1000e35;
+
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                      Mathematical Constants                */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
     /// @notice Precision factor for decimal calculations (1e18)
     uint256 public constant PRECISION_FACTOR = 1e18;

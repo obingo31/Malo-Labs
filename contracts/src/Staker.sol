@@ -13,6 +13,13 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant REWARDS_ADMIN_ROLE = keccak256("REWARDS_ADMIN_ROLE");
     bytes32 public constant PAUSE_GUARDIAN_ROLE = keccak256("PAUSE_GUARDIAN_ROLE");
 
+    // Events
+    event Staked(address indexed user, uint256 amount);
+    event Withdrawn(address indexed user, uint256 amount);
+    event RewardAdded(address indexed token, uint256 amount, uint256 duration);
+    event RewardClaimed(address indexed user, address indexed token, uint256 amount);
+    event RewardTokenRemoved(address indexed token);
+
     IERC20 public immutable stakingToken;
     IERC20[] public rewardTokens;
     mapping(address => bool) public isRewardToken;
@@ -50,6 +57,7 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         _stakedBalances[msg.sender] += amount;
 
         stakingToken.safeTransferFrom(msg.sender, address(this), amount);
+        emit Staked(msg.sender, amount);
     }
 
     function withdraw(uint256 amount) external nonReentrant whenNotPaused {
@@ -61,9 +69,11 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         _stakedBalances[msg.sender] -= amount;
 
         stakingToken.safeTransfer(msg.sender, amount);
+        emit Withdrawn(msg.sender, amount);
     }
 
     function claimRewards(address rewardToken) external nonReentrant {
+        require(isRewardToken[rewardToken], "Invalid reward token");
         _updateRewards(msg.sender);
 
         uint256 reward = rewardsEarned[msg.sender][rewardToken];
@@ -71,6 +81,7 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
 
         rewardsEarned[msg.sender][rewardToken] = 0;
         IERC20(rewardToken).safeTransfer(msg.sender, reward);
+        emit RewardClaimed(msg.sender, rewardToken, reward);
     }
 
     function addReward(address rewardToken, uint256 totalRewards, uint256 duration)
@@ -86,15 +97,31 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
             require(block.timestamp >= reward.lastUpdateTime + reward.duration, "Previous reward ongoing");
         }
 
+        // Handle leftover tokens
+        uint256 currentBalance = IERC20(rewardToken).balanceOf(address(this));
+        require(totalRewards > currentBalance, "Insufficient new rewards");
+        uint256 adjustedTotal = totalRewards - currentBalance;
+
+        // Prevent duplicate entries
         if (!isRewardToken[rewardToken]) {
-            rewardTokens.push(IERC20(rewardToken));
+            bool isAlreadyInArray = false;
+            for (uint256 i = 0; i < rewardTokens.length; i++) {
+                if (address(rewardTokens[i]) == rewardToken) {
+                    isAlreadyInArray = true;
+                    break;
+                }
+            }
+            if (!isAlreadyInArray) {
+                rewardTokens.push(IERC20(rewardToken));
+            }
             isRewardToken[rewardToken] = true;
         }
 
-        uint256 rate = totalRewards / duration;
+        uint256 rate = adjustedTotal / duration;
         rewards[rewardToken] = Reward(duration, rate, block.timestamp, 0);
 
         IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), totalRewards);
+        emit RewardAdded(rewardToken, adjustedTotal, duration);
     }
 
     function removeRewardToken(address rewardToken) external onlyRole(REWARDS_ADMIN_ROLE) {
@@ -104,13 +131,18 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         );
 
         isRewardToken[rewardToken] = false;
-        for (uint256 i = 0; i < rewardTokens.length; i++) {
+
+        // Remove all instances from array
+        uint256 i = 0;
+        while (i < rewardTokens.length) {
             if (address(rewardTokens[i]) == rewardToken) {
                 rewardTokens[i] = rewardTokens[rewardTokens.length - 1];
                 rewardTokens.pop();
-                break;
+            } else {
+                i++;
             }
         }
+        emit RewardTokenRemoved(rewardToken);
     }
 
     function _updateRewards(address user) internal {
@@ -145,7 +177,6 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
     }
 
     function earned(address user, address rewardToken) public view returns (uint256) {
-        // Reward storage reward = rewards[rewardToken];
         uint256 userRewardPerToken = _rewardPerToken(rewardToken) - userRewardPerTokenPaid[user][rewardToken];
         return (_stakedBalances[user] * userRewardPerToken) / 1e18 + rewardsEarned[user][rewardToken];
     }
@@ -156,5 +187,20 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
 
     function stakedBalanceOf(address user) external view returns (uint256) {
         return _stakedBalances[user];
+    }
+
+    // Optional: Batch claim rewards
+    function claimAllRewards() external nonReentrant {
+        _updateRewards(msg.sender);
+
+        for (uint256 i = 0; i < rewardTokens.length; i++) {
+            address token = address(rewardTokens[i]);
+            uint256 reward = rewardsEarned[msg.sender][token];
+            if (reward > 0 && isRewardToken[token]) {
+                rewardsEarned[msg.sender][token] = 0;
+                IERC20(token).safeTransfer(msg.sender, reward);
+                emit RewardClaimed(msg.sender, token, reward);
+            }
+        }
     }
 }

@@ -39,22 +39,22 @@ contract MALGovernanceStakingFuzzer is Test, Setup {
     ) public {
         stakeAmount = bound(stakeAmount, 100 ether, 10000 ether);
         votingPeriod = bound(votingPeriod, 1 hours, 30 days);
-        
+
         vm.startPrank(daoMultisig);
         malGovernanceStaking.updateVotingPeriod(votingPeriod);
         vm.stopPrank();
-        
+
         address actor = _currentActor();
         vm.startPrank(actor);
         IERC20(governanceToken).approve(address(malGovernanceStaking), stakeAmount);
         malGovernanceStaking.stake(stakeAmount);
-        
+
         uint256 proposalId = malGovernanceStaking.createProposal(address(reverter), proposalData);
         malGovernanceStaking.vote(proposalId, true);
         vm.stopPrank();
-        
+
         vm.warp(block.timestamp + votingPeriod + 1);
-        
+
         vm.startPrank(actor);
         try malGovernanceStaking.executeProposal(proposalId) {
             proposalExecutionFailed = false;
@@ -62,30 +62,27 @@ contract MALGovernanceStakingFuzzer is Test, Setup {
             proposalExecutionFailed = true;
         }
         vm.stopPrank();
-        
-        (, , , , , , , bool executed) = malGovernanceStaking.proposals(proposalId);
+
+        (,,,,,,, bool executed) = malGovernanceStaking.proposals(proposalId);
         assert(proposalExecutionFailed);
         assert(!executed);
     }
 
-    function testFuzz_ExecutionFailureHandling(
-        bytes calldata callData, 
-        bool useDecimalReverter
-    ) public {
+    function testFuzz_ExecutionFailureHandling(bytes calldata callData, bool useDecimalReverter) public {
         address target = useDecimalReverter ? address(reverterWithDecimals) : address(reverter);
         uint256 stakeAmount = 20000 ether;
         address actor = _currentActor();
-        
+
         vm.startPrank(actor);
         IERC20(governanceToken).approve(address(malGovernanceStaking), stakeAmount);
         malGovernanceStaking.stake(stakeAmount);
-        
+
         uint256 proposalId = malGovernanceStaking.createProposal(target, callData);
         malGovernanceStaking.vote(proposalId, true);
         vm.stopPrank();
-        
+
         vm.warp(block.timestamp + malGovernanceStaking.votingPeriod() + 1);
-        
+
         vm.startPrank(actor);
         try malGovernanceStaking.executeProposal(proposalId) {
             fail();
@@ -95,8 +92,8 @@ contract MALGovernanceStakingFuzzer is Test, Setup {
             assertEq(expectedSelector, receivedSelector);
         }
         vm.stopPrank();
-        
-        (, , , , , , , bool executed) = malGovernanceStaking.proposals(proposalId);
+
+        (,,,,,,, bool executed) = malGovernanceStaking.proposals(proposalId);
         assert(!executed);
     }
 }

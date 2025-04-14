@@ -17,7 +17,7 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
 
     // Token contracts
     IERC20 public immutable malGovernanceToken; // For transfers
-    IVotes public immutable malGovernanceVotes;  // For voting
+    IVotes public immutable malGovernanceVotes; // For voting
     IERC20 public immutable malUtilityToken;
 
     // Governance parameters

@@ -1,15 +1,15 @@
-// SPDX-License-Identifier: MIT
+// // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
 // // import {Properties} from "./Properties.sol";
 // import {BaseTargetFunctions} from "@chimera/BaseTargetFunctions.sol";
-// import {IHevm, vm} from "@chimera/Hevm.sol";
+
 // import {IStaking} from "src/interfaces/IStaking.sol";
 // import {ExpectedErrors} from "./ExpectedErrors.sol";
 // import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 // import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
-// abstract contract TargetFunctions is ExpectedErrors, Properties, BaseTargetFunctions {
+// abstract contract TargetFunctions is ExpectedErrors, BaseTargetFunctions {
 //     constructor(address _staking, address _stakingToken, address _rewardToken) {
 //         staking = IStaking(_staking);
 //         stakingToken = ERC20(_stakingToken);
