@@ -19,68 +19,46 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
      */
     using SafeERC20 for IERC20;
 
-    // Roles
     bytes32 public constant FEE_SETTER_ROLE = keccak256("FEE_SETTER_ROLE");
     bytes32 public constant LOCK_MANAGER_ROLE = keccak256("LOCK_MANAGER_ROLE");
 
-    // The token that can be staked
     IERC20 public immutable stakingToken;
 
-    // The recipient of protocol fees
     address public feeRecipient;
 
-    // Timestamp when the current reward period finishes
     uint256 public periodFinish;
 
-    // The rate at which rewards are distributed per second
     uint256 public rewardRate;
 
-    // Timestamp of the last reward update
     uint256 public lastUpdateTime;
 
-    // Reward per token stored, used for calculating earned rewards
     uint256 public rewardPerTokenStored;
 
-    // Percentage of claimed rewards sent to `feeRecipient` (in basis points, max 100 = 10%)
     uint256 public protocolFee;
 
-    // Length of the reward distribution period
     uint256 public rewardPeriod;
 
-    // Total rewards distributed to all users
     uint256 public totalRewardsDistributed;
 
-    // Total number of tokens staked in the contract
     uint256 private _totalSupply;
 
-    // NEW: Store the last nonzero total supply for retroactive reward calculation
     uint256 public lastNonZeroTotalSupply;
 
-    // Lock structure to keep track of locked tokens
     struct Lock {
         uint256 amount;
         uint256 allowance;
     }
 
-    // Account structure to track user-specific data
     struct Account {
         mapping(address => Lock) locks;
         uint256 totalLocked;
     }
 
-    // Mapping of user addresses to their staked balances
     mapping(address => uint256) private _balances;
 
-    // Mapping of user addresses to their reward per token paid
     mapping(address => uint256) public userRewardPerTokenPaid;
-
-    // Mapping of user addresses to their claimable rewards
     mapping(address => uint256) public rewards;
-
-    // Mapping of user addresses to the total rewards claimed
     mapping(address => uint256) public rewardsClaimed;
-
-    // Mapping of user addresses to their account info
     mapping(address => Account) private _accounts;
 
     // Events
@@ -97,6 +75,9 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
     event LockAllowanceChanged(address indexed user, address indexed lockManager, uint256 newAllowance);
     event LockAmountChanged(address indexed user, address indexed lockManager, uint256 newAmount);
     event LockManagerRemoved(address indexed user, address indexed lockManager);
+
+    // Fee Management
+    uint256 public constant MAX_FEE = 100; // 10% in basis points
 
     modifier updateReward(address account) {
         rewardPerTokenStored = rewardPerToken();
@@ -139,8 +120,6 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
     function unpause() public onlyRole(PAUSER_ROLE) {
         _unpause();
     }
-
-    // Core staking functions
 
     /// @notice Returns the reward per token
     function rewardPerToken() public view returns (uint256) {
@@ -379,9 +358,6 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
         emit RewardPeriodUpdated(newPeriod);
     }
 
-    // Fee Management
-    uint256 public constant MAX_FEE = 100; // 10% in basis points
-
     function setProtocolFee(uint256 newFee) external onlyRole(FEE_SETTER_ROLE) {
         if (newFee > MAX_FEE) revert Errors.InvalidProtocolFee();
         protocolFee = newFee;
@@ -415,7 +391,6 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
 
         _totalSupply += _amount;
         _balances[_to] += _amount;
-        // Update lastNonZeroTotalSupply so that retroactive rewards are calculated
         if (_totalSupply > 0) {
             lastNonZeroTotalSupply = _totalSupply;
         }
@@ -430,7 +405,6 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
 
         _totalSupply -= _amount;
         _balances[_user] -= _amount;
-        // If tokens remain staked, update lastNonZeroTotalSupply accordingly.
         if (_totalSupply > 0) {
             lastNonZeroTotalSupply = _totalSupply;
         }
@@ -456,7 +430,6 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
 
         _totalSupply -= _amount;
         _balances[_from] -= _amount;
-        // Update lastNonZeroTotalSupply if needed.
         if (_totalSupply > 0) {
             lastNonZeroTotalSupply = _totalSupply;
         }
@@ -526,14 +499,10 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
         uint256 amount = _amount == 0 ? lock_.amount : _amount;
         if (lock_.amount < amount) return false;
 
-        // If sender is the lock manager, unlocking is allowed
         if (_sender == _lockManager) return true;
 
-        // If sender is neither the lock manager nor the owner, unlocking is not allowed
         if (_sender != _user) return false;
 
-        // The sender must be the user
-        // If amount is zero (full unlock) and no tokens are locked, allow it
         if (amount == 0) return true;
 
         return ILockManager(_lockManager).canUnlock(_user, amount);

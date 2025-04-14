@@ -1,9 +1,8 @@
-Internal Documentation for Staking Protocol Malo Labs Invariant Testing Suite
-Malo Labs
-Advanced Actor-Based Testing for Secure Staking Systems
+# Internal Documentation for Staking Protocol Malo Labs Invariant Testing Suite
 
-Table of Contents
-Running the Suite
+## Malo Labs
+
+Advanced Actor-Based Testing for Secure Staking System
 
 
 Execution Modes
@@ -30,22 +29,9 @@ Logs output Analysis
 
 Foundry Trace Reproduction
 
-## CI Integration
-
 ## Corpus Management
 
 ## Continuous Fuzzing
-
-Prerequisites
-Toolchain Installation:
-
-Foundry for local test execution
-
-Echidna for property-based testing
-
-Medusa for multi-agent fuzzing
-
-Configuration:
 
 Protocol deployment addresses
 
@@ -88,7 +74,8 @@ Implement checks using property-specific assertions
 
 Validate across all actors and contract instances
 
-Postconditions
+### Postconditions
+
 State guarantees after specific operations.
 ```bash
 Type	   Scope	                  Example
@@ -101,11 +88,10 @@ Capture pre-state values using _before hooks
 
 Execute protocol operation
 
-Verify post-state via _after checks
+* Verify post-state via _after checks
 
-Handlers: Extending Protocol Coverage
-Overview
-Handlers act as middleware between test tooling and protocol contracts, enabling:
+
+### Handlers act as middleware between test tooling and protocol contracts, enabling:
 
 Realistic user behavior simulation
 
@@ -115,8 +101,6 @@ State transition validation
 
 Adding New Functions
 Identify Target: Map new protocol functions to handler categories (user/permissioned/simulator)
-
-Parameter Design:
 
 Randomizable inputs
 
@@ -141,11 +125,9 @@ Max limit boundary tests
 
 Postcondition Updates: Add operation-specific assertions
 
-Debugging Workflow
-Logging & Output
+* Failure Shrinking: 
 
-
-Failure Shrinking: Automated test case simplification
+Automated test case simplification
 
 Artifact Storage:
 
@@ -153,8 +135,9 @@ Crash traces in /corpus/failures
 
 Coverage data in /corpus/coverage
 
-Foundry Reproduction
-Trace Conversion: Use malo-trace-parser to convert Echidna outputs
+### Foundry Reproduction
+
+CryticToFoundry
 
 Test Replay:
 
@@ -172,7 +155,7 @@ graph TD
     B --> C[24h Fuzz Campaign]  
     C --> D{Issues Found?}  
     D -->|Yes| E[Alert Team]  
-    D -->|No| F[Update Corpus]  
+    D -->|No | F[Update Corpus]  
 ```
 Pipeline Features:
 

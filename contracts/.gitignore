@@ -23,3 +23,5 @@ slither_results.json
 coverage/
 call_sequences/
 test_results/
+node_modules/
+

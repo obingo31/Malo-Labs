@@ -16,8 +16,8 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant POLICY_MANAGER_ROLE = keccak256("POLICY_MANAGER_ROLE");
 
     // Token contracts
-    IERC20 public immutable malGovernanceToken; // For transfers
-    IVotes public immutable malGovernanceVotes; // For voting
+    IERC20 public immutable malGovernanceToken;
+    IVotes public immutable malGovernanceVotes;
     IERC20 public immutable malUtilityToken;
 
     // Governance parameters
@@ -179,6 +179,7 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
 
     function updateQuorum(uint256 newPercentage) external onlyRole(GOVERNANCE_ADMIN_ROLE) {
         if (newPercentage > 100) revert InvalidPercentage();
+        if (newPercentage < 1) revert InvalidPercentage();
         quorumPercentage = newPercentage;
         emit GovernanceUpdated("quorumPercentage", newPercentage);
     }
