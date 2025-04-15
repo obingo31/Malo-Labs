@@ -4,7 +4,7 @@ out = "out"
 libs = ["lib"]
 no_match_contract = "CryticTester"
 optimizer=false ## Required by Crytic-Comile
-evm_version = "cancun"
+evm_version = "shanghai"
 
 
 

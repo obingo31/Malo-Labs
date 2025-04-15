@@ -4,20 +4,20 @@
     "workerResetLimit": 50,
     "timeout": 0,
     "testLimit": 0,
-    "callSequenceLength": 1,
+    "callSequenceLength": 100,
     "corpusDirectory": "medusa",
     "coverageEnabled": true,
     "deploymentOrder": [
-      "CryticTester"
+      "Tester"
     ],
     "targetContracts": [
-      "CryticTester"
+      "Tester"
     ],
     "targetContractsBalances": [
       "0x27b46536c66c8e3000000"
     ],
     "constructorArgs": {},
-    "deployerAddress": "0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496",
+    "deployerAddress": "0x30000",
     "senderAddresses": [
       "0x10000",
       "0x20000",
@@ -80,21 +80,21 @@
   "compilation": {
     "platform": "crytic-compile",
     "platformConfig": {
-      "target": ".",
-      "solcVersion": "",
-      "exportDirectory": "",
+      "target": "test/echidna/Tester.t.sol",
+      "solcVersion": "0.8.20",
+      "exportDirectory": "artifacts",
       "args": [
         "--foundry-compile-all"
       ]
     }
   },
   "slither": {
-		"useSlither": true,
-		"cachePath": "slither_results.json",
-		"args": []
-	},
+    "useSlither": true,
+    "cachePath": "slither_results.json",
+    "args": []
+  },
   "logging": {
-    "level": "info",
-    "logDirectory": ""
+    "level": "debug",
+    "logDirectory": "logs"
   }
 }

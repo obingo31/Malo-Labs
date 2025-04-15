@@ -62,7 +62,16 @@ echidna-crytic:
 		--corpus-dir $(CORPUS_DIR)
 		--test-mode assertion \
 		--config $(ECHIDNA_CONFIG) \
-	 
+
+echidna-config:
+	echidna ./test/echidna/Tester.t.sol \
+		--contract Tester \
+		--config echidna_config.yaml \
+		--format text \
+		--workers 16 \
+		--test-limit 1000000 \
+		--test-mode assertion \
+		--corpus-dir $(CORPUS_DIR)
 
 # Symbolic Testing
 halmos:

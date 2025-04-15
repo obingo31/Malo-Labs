@@ -1,0 +1,67 @@
+⇾ Compiling targets with crytic-compile module=fuzzer
+⇾ Running command:
+/home/linuxbrew/.linuxbrew/bin/crytic-compile test/echidna/Tester.t.sol --export-format solc --export-dir artifacts --foundry-compile-all
+⇾ Finished compiling targets in 8s module=fuzzer
+⇾ Using cached Slither results found at slither_results.json
+⇾ Initializing corpus module=fuzzer
+⇾ Setting up test chain module=fuzzer
+⇾ Finished setting up test chain module=fuzzer
+⇾ Running call sequences in the corpus module=fuzzer
+debug Corpus item 1744635741482614953-633c9e4b-ad0a-4373-8629-d44c33744339.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635741490014753-b096d2d1-9ab1-4f98-ac19-51bd9c6f6c6f.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635741502246554-01936111-e8a5-43af-b496-f98493dc72e5.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635741506320654-bf6318b8-ec35-42ea-a4e5-101733b6c31b.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635741529235355-2dcb5d54-7ef7-46a8-b5f8-cad58d2aa5cd.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635741539138555-183a8a64-5bf1-4965-a2aa-73f71ca3add5.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635741556072556-09a3e33b-144b-4366-b0ff-0b06ebd1b844.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635741559446656-234ec37c-8210-4fe5-afeb-9a5e90f4f133.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635741569493856-c4583d05-0af0-4172-ab6a-0cbf6957aa41.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635741612671958-ddcbf7a7-b0ec-44f4-8236-e7d9c50554ae.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635741681051460-e8544611-b8d1-4805-a1ac-bd23d0e4e9be.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635741729963661-98cfbb6c-7191-4342-859b-2827bc5d9217.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635741738365662-12f98c1b-1417-4842-9d21-c3fa1de41765.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635742051113672-afd6f085-a9b5-4a9c-88e3-16deb3c29d58.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635742298302381-28234e8f-2a83-4b23-b81f-d97b8a241a0e.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635749608471012-dd126ef5-a694-4cb8-ae8a-3225937c9e7e.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635755974061106-179e586a-e378-4932-8f71-ebbd42af5d03.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635757101458440-cdf97bfe-5907-4412-bc0e-45414159dac4.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+debug Corpus item 1744635759736485421-c40e15bf-5d7a-4f11-9bfd-3f30eee36c18.json disabled due to error when replaying it
+‣ contract at address '0x7D8CB8F412B3ee9AC79558791333F41d2b1ccDAC' could not be resolved module=corpus
+⇾ Finished running call sequences in the corpus in 0s module=fuzzer
+⇾ corpus: health: 0%, sequences: 19 (0 valid, 19 invalid) module=fuzzer
+⇾ Fuzzing with 16 workers module=fuzzer
+⇾ [NOT STARTED] Assertion Test: Tester.stakerContract() module=fuzzer
+⇾ [NOT STARTED] Assertion Test: Tester.adminAddress() module=fuzzer
+⇾ [NOT STARTED] Assertion Test: Tester.echidna_total_supply() module=fuzzer
+⇾ [NOT STARTED] Assertion Test: Tester.guardianAddress() module=fuzzer
+⇾ [NOT STARTED] Assertion Test: Tester.sampleRewardToken() module=fuzzer
+⇾ [NOT STARTED] Assertion Test: Tester.stakeToken() module=fuzzer
+⇾ fuzz: elapsed: 0s, calls: 0 (0/sec), seq/s: 0, coverage: 0, corpus: 0, failures: 0/0, gas/s: 0, shrinking: 0, mem: 29/46 MB, resets/s: 0 module=fuzzer
+error Encountered an error in the main fuzzing loop
+‣ cannot generate fuzzed call as there are no methods to call module=fuzzer
+⇾ Fuzzer stopped, test results follow below ... module=fuzzer
+⇾ [1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: Tester.adminAddress()[0m module=fuzzer
+⇾ [1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: Tester.echidna_total_supply()[0m module=fuzzer
+⇾ [1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: Tester.guardianAddress()[0m module=fuzzer
+⇾ [1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: Tester.sampleRewardToken()[0m module=fuzzer
+⇾ [1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: Tester.stakeToken()[0m module=fuzzer
+⇾ [1m[32m[NOT STARTED] [0m[0m[1mAssertion Test: Tester.stakerContract()[0m module=fuzzer
+⇾ Test summary: 0 test(s) passed, 0 test(s) failed module=fuzzer

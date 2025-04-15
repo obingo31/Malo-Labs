@@ -2,9 +2,9 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import {Setup} from "../recon/Setup.sol";
+import {Setup} from "../InvariantTests/Setup.sol";
 import {MALGovernanceStaking} from "src/MALGovernanceStaking.sol";
-import {MockVotesToken} from "../recon/MockVotesToken.sol";
+import {MockVotesToken} from "../InvariantTests/MockVotesToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IVotes} from "@openzeppelin/contracts/governance/utils/IVotes.sol";
 
