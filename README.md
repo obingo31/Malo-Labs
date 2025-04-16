@@ -56,6 +56,21 @@ Run fuzzing tests:
 ```bash
 echidna-test .
 ```
+Do not forget to update Foundry regularly with the following command
+```
+foundryup
+```
+Similarly for forge-std run
+
+forge update lib/forge-std
+
+Submodules
+Run below command to include/update all git submodules like openzeppelin contracts, forge-std etc (lib/)
+
+```
+git submodule update --init --recursive
+```
+
 
 ## Project Structure
 
