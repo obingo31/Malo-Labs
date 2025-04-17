@@ -1,8 +1,8 @@
 forge-std/=lib/forge-std/src/
+@openzeppelin/=lib/openzeppelin-contracts/
 @chimera/=lib/chimera/src/
 @recon/=lib/setup-helpers/src/
 halmos-cheatcodes/=lib/halmos-cheatcodes/src/
 @rari-capital/solmate/=lib/solmate/
-
 
 

@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "src/Staker.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {Actor} from "../echidna/Actor.sol";
+import {Actor} from "../InvariantTests/Actor.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {IStaker} from "src/interfaces/IStaker.sol";
 import {console} from "forge-std/console.sol";
@@ -87,7 +87,6 @@ contract StakerTest is Test {
     }
 
     // forge test --match-contract StakerTest --match-test testStake ✔️
-    // Test basic staking functionality
     function testStake() public {
         // User approves tokens for staking
         vm.prank(address(user1Actor));
@@ -105,7 +104,6 @@ contract StakerTest is Test {
     }
 
     // forge test --match-contract StakerTest --match-test testStake ✔️
-    // Test withdrawal functionality
     function testWithdraw() public {
         // First stake tokens
         vm.startPrank(address(user1Actor));
@@ -126,17 +124,14 @@ contract StakerTest is Test {
     }
 
     // forge test --match-contract StakerTest --match-test testAddReward ✔️
-    // Test for adding reward token
     function testAddReward() public {
         uint256 amount = REWARD_AMOUNT;
         uint256 duration = REWARD_DURATION;
 
         _addReward(address(rewardToken1), amount, duration);
 
-        // Verify reward token was added
         assertTrue(staker.isRewardToken(address(rewardToken1)));
 
-        // Check reward data - NOTE: We need to unpack the tuple
         (uint256 rewardDuration, uint256 rate, uint256 lastUpdateTime,) = staker.rewards(address(rewardToken1));
 
         assertEq(rewardDuration, duration);
@@ -150,20 +145,16 @@ contract StakerTest is Test {
         // Add reward
         _addReward(address(rewardToken1), REWARD_AMOUNT, REWARD_DURATION);
 
-        // User stakes tokens
         vm.startPrank(address(user1Actor));
         stakingToken.approve(address(staker), STAKE_AMOUNT);
         bytes memory stakeCallData = abi.encodeWithSelector(staker.stake.selector, STAKE_AMOUNT);
         user1Actor.proxy(address(staker), stakeCallData);
         vm.stopPrank();
 
-        // Move forward half the reward duration
         vm.warp(block.timestamp + REWARD_DURATION / 2);
 
-        // Check earned amount (~half the rewards since we waited half the time)
         uint256 expectedReward = (REWARD_AMOUNT / 2);
         uint256 earned = staker.earned(address(user1Actor), address(rewardToken1));
-        // Allow small rounding error
         assertApproxEqRel(earned, expectedReward, 0.01e18); // 1% tolerance
 
         // Claim rewards
@@ -180,46 +171,37 @@ contract StakerTest is Test {
     }
 
     // forge test --match-contract StakerTest --match-test testRemoveRewardToken ✔️
-    // Test removing reward token
     function testRemoveRewardToken() public {
         // Add reward
         _addReward(address(rewardToken1), REWARD_AMOUNT, REWARD_DURATION);
 
-        // Advance past the reward period
         vm.warp(block.timestamp + REWARD_DURATION + 1);
 
-        // Remove reward token
         vm.prank(address(adminActor));
         bytes memory removeCallData = abi.encodeWithSelector(staker.removeRewardToken.selector, address(rewardToken1));
         adminActor.proxy(address(staker), removeCallData);
 
-        // Verify token was removed
         assertFalse(staker.isRewardToken(address(rewardToken1)));
     }
 
     // forge test --match-contract StakerTest --match-test testMultipleRewardTokens ✔️
-    // Test multiple reward tokens
     function testMultipleRewardTokens() public {
         // Add two reward tokens
         _addReward(address(rewardToken1), REWARD_AMOUNT, REWARD_DURATION);
         _addReward(address(rewardToken2), REWARD_AMOUNT * 2, REWARD_DURATION);
 
-        // User stakes tokens
         vm.startPrank(address(user1Actor));
         stakingToken.approve(address(staker), STAKE_AMOUNT);
         bytes memory stakeCallData = abi.encodeWithSelector(staker.stake.selector, STAKE_AMOUNT);
         user1Actor.proxy(address(staker), stakeCallData);
         vm.stopPrank();
 
-        // Move forward half the reward duration
         vm.warp(block.timestamp + REWARD_DURATION / 2);
 
-        // Claim all rewards
         vm.prank(address(user1Actor));
         bytes memory claimAllCallData = abi.encodeWithSelector(staker.claimAllRewards.selector);
         user1Actor.proxy(address(staker), claimAllCallData);
 
-        // Verify both rewards were received
         assertApproxEqRel(rewardToken1.balanceOf(address(user1Actor)), REWARD_AMOUNT / 2, 0.01e18);
 
         assertApproxEqRel(rewardToken2.balanceOf(address(user1Actor)), REWARD_AMOUNT * 2 / 2, 0.01e18);
@@ -231,23 +213,19 @@ contract StakerTest is Test {
         // Add reward
         _addReward(address(rewardToken1), REWARD_AMOUNT, REWARD_DURATION);
 
-        // User1 stakes tokens
         vm.startPrank(address(user1Actor));
         stakingToken.approve(address(staker), STAKE_AMOUNT);
         bytes memory stakeCallData = abi.encodeWithSelector(staker.stake.selector, STAKE_AMOUNT);
         user1Actor.proxy(address(staker), stakeCallData);
         vm.stopPrank();
 
-        // Advance 25% of the way through
         vm.warp(block.timestamp + REWARD_DURATION / 4);
 
-        // User2 stakes tokens (same amount)
         vm.startPrank(address(user2Actor));
         stakingToken.approve(address(staker), STAKE_AMOUNT);
         user2Actor.proxy(address(staker), stakeCallData);
         vm.stopPrank();
 
-        // Advance to the end of the reward period
         vm.warp(block.timestamp + (REWARD_DURATION * 3 / 4));
 
         // User1 should have earned 25% + (75% / 2) = 62.5% of rewards
