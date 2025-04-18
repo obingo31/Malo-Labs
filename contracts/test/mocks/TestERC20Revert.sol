@@ -8,12 +8,11 @@ contract TestERC20Revert is ERC20("TestRevert", "REVERT", 18) {
         _mint(to, amount);
     }
 
-    function transferFrom(address, /* from */ address, /* to */ uint256 /* amount */ )
-        public
-        pure
-        override
-        returns (bool)
-    {
+    function transferFrom(
+        address, /* from */
+        address, /* to */
+        uint256 /* amount */
+    ) public pure override returns (bool) {
         revert(
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         );

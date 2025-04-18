@@ -44,7 +44,9 @@ abstract contract Setup is BaseSetup, ActorManager, AssetManager, Utils {
         return _getActor();
     }
 
-    function _getAssetAddress(uint256 index) internal view returns (address) {
+    function _getAssetAddress(
+        uint256 index
+    ) internal view returns (address) {
         address[] memory assets = _getAssets();
         require(index < assets.length, "Index out of bounds");
         return assets[index];

@@ -14,11 +14,15 @@ contract TestERC20 is ERC20("Test20", "TST20", 18) {
         noReturnData = false;
     }
 
-    function blockTransfer(bool blocking) external {
+    function blockTransfer(
+        bool blocking
+    ) external {
         blocked = blocking;
     }
 
-    function setNoReturnData(bool noReturn) external {
+    function setNoReturnData(
+        bool noReturn
+    ) external {
         noReturnData = noReturn;
     }
 

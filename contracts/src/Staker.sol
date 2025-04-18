@@ -49,7 +49,9 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(PAUSE_GUARDIAN_ROLE, _pauseGuardian);
     }
 
-    function stake(uint256 amount) external nonReentrant whenNotPaused {
+    function stake(
+        uint256 amount
+    ) external nonReentrant whenNotPaused {
         require(amount > 0, "Cannot stake 0");
         _updateRewards(msg.sender);
 
@@ -60,7 +62,9 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) external nonReentrant whenNotPaused {
+    function withdraw(
+        uint256 amount
+    ) external nonReentrant whenNotPaused {
         require(amount > 0, "Cannot withdraw 0");
         require(_stakedBalances[msg.sender] >= amount, "Insufficient balance");
         _updateRewards(msg.sender);
@@ -72,7 +76,9 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         emit Withdrawn(msg.sender, amount);
     }
 
-    function claimRewards(address rewardToken) external nonReentrant {
+    function claimRewards(
+        address rewardToken
+    ) external nonReentrant {
         require(isRewardToken[rewardToken], "Invalid reward token");
         _updateRewards(msg.sender);
 
@@ -84,10 +90,11 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         emit RewardClaimed(msg.sender, rewardToken, reward);
     }
 
-    function addReward(address rewardToken, uint256 totalRewards, uint256 duration)
-        external
-        onlyRole(REWARDS_ADMIN_ROLE)
-    {
+    function addReward(
+        address rewardToken,
+        uint256 totalRewards,
+        uint256 duration
+    ) external onlyRole(REWARDS_ADMIN_ROLE) {
         require(rewardToken != address(0), "Invalid reward token");
         require(totalRewards > 0 && duration > 0, "Invalid parameters");
         require(totalRewards % duration == 0, "TotalRewards must be divisible by duration");
@@ -124,7 +131,9 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         emit RewardAdded(rewardToken, adjustedTotal, duration);
     }
 
-    function removeRewardToken(address rewardToken) external onlyRole(REWARDS_ADMIN_ROLE) {
+    function removeRewardToken(
+        address rewardToken
+    ) external onlyRole(REWARDS_ADMIN_ROLE) {
         require(isRewardToken[rewardToken], "Not a reward token");
         require(
             block.timestamp >= rewards[rewardToken].lastUpdateTime + rewards[rewardToken].duration, "Reward ongoing"
@@ -145,7 +154,9 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         emit RewardTokenRemoved(rewardToken);
     }
 
-    function _updateRewards(address user) internal {
+    function _updateRewards(
+        address user
+    ) internal {
         for (uint256 i = 0; i < rewardTokens.length; i++) {
             address token = address(rewardTokens[i]);
             if (!isRewardToken[token]) continue;
@@ -161,14 +172,18 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         }
     }
 
-    function lastTimeRewardApplicable(address rewardToken) public view returns (uint256) {
+    function lastTimeRewardApplicable(
+        address rewardToken
+    ) public view returns (uint256) {
         Reward storage reward = rewards[rewardToken];
         return block.timestamp < reward.lastUpdateTime + reward.duration
             ? block.timestamp
             : reward.lastUpdateTime + reward.duration;
     }
 
-    function _rewardPerToken(address rewardToken) internal view returns (uint256) {
+    function _rewardPerToken(
+        address rewardToken
+    ) internal view returns (uint256) {
         Reward storage reward = rewards[rewardToken];
         if (_totalStaked == 0) return reward.rewardPerTokenStored;
 
@@ -185,7 +200,9 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         return _totalStaked;
     }
 
-    function stakedBalanceOf(address user) external view returns (uint256) {
+    function stakedBalanceOf(
+        address user
+    ) external view returns (uint256) {
         return _stakedBalances[user];
     }
 

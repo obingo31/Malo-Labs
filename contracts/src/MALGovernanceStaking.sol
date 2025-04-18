@@ -77,7 +77,9 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
     }
 
     // Core staking functions
-    function stake(uint256 amount) external nonReentrant whenNotPaused {
+    function stake(
+        uint256 amount
+    ) external nonReentrant whenNotPaused {
         if (amount == 0) revert InsufficientBalance();
 
         _updateDelegation(msg.sender, true);
@@ -89,7 +91,9 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) external nonReentrant {
+    function withdraw(
+        uint256 amount
+    ) external nonReentrant {
         if (amount > _stakedBalances[msg.sender]) revert InsufficientBalance();
         if (block.timestamp < lastStakeTime[msg.sender] + withdrawalCooldown) revert CooldownActive();
 
@@ -142,7 +146,9 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         emit Voted(proposalId, msg.sender, support, power);
     }
 
-    function executeProposal(uint256 proposalId) external nonReentrant {
+    function executeProposal(
+        uint256 proposalId
+    ) external nonReentrant {
         Proposal storage proposal = proposals[proposalId];
         if (proposal.executed) revert ProposalAlreadyExecuted();
         if (block.timestamp <= proposal.endTime) revert VotingClosed();
@@ -157,7 +163,9 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
     }
 
     // Rewards system
-    function calculateRewards(address user) public view returns (uint256) {
+    function calculateRewards(
+        address user
+    ) public view returns (uint256) {
         uint256 stakedDuration = block.timestamp - lastStakeTime[user];
         return (_stakedBalances[user] * stakedDuration * rewardRate) / 1e18;
     }
@@ -172,19 +180,25 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
     }
 
     // Administration functions
-    function updateVotingPeriod(uint256 newPeriod) external onlyRole(POLICY_MANAGER_ROLE) {
+    function updateVotingPeriod(
+        uint256 newPeriod
+    ) external onlyRole(POLICY_MANAGER_ROLE) {
         votingPeriod = newPeriod;
         emit GovernanceUpdated("votingPeriod", newPeriod);
     }
 
-    function updateQuorum(uint256 newPercentage) external onlyRole(GOVERNANCE_ADMIN_ROLE) {
+    function updateQuorum(
+        uint256 newPercentage
+    ) external onlyRole(GOVERNANCE_ADMIN_ROLE) {
         if (newPercentage > 100) revert InvalidPercentage();
         if (newPercentage < 1) revert InvalidPercentage();
         quorumPercentage = newPercentage;
         emit GovernanceUpdated("quorumPercentage", newPercentage);
     }
 
-    function setWithdrawalCooldown(uint256 newCooldown) external onlyRole(GOVERNANCE_ADMIN_ROLE) {
+    function setWithdrawalCooldown(
+        uint256 newCooldown
+    ) external onlyRole(GOVERNANCE_ADMIN_ROLE) {
         withdrawalCooldown = newCooldown;
         emit GovernanceUpdated("withdrawalCooldown", newCooldown);
     }
@@ -207,7 +221,9 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
     }
 
     // View functions
-    function getVotingPower(address citizen) external view returns (uint256) {
+    function getVotingPower(
+        address citizen
+    ) external view returns (uint256) {
         return malGovernanceVotes.getVotes(citizen);
     }
 
@@ -215,7 +231,9 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         return _totalStaked;
     }
 
-    function stakedBalance(address user) external view returns (uint256) {
+    function stakedBalance(
+        address user
+    ) external view returns (uint256) {
         return _stakedBalances[user];
     }
 

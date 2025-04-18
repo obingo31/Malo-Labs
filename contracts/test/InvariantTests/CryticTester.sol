@@ -12,4 +12,3 @@ contract CryticTester is TargetFunctions, CryticAsserts {
         setup();
     }
 }
-

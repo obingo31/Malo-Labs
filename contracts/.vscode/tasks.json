@@ -1,0 +1,72 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "forge-build",
+            "type": "shell",
+            "command": "forge build --sizes",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "forge-test",
+            "type": "shell",
+            "command": "forge test -vvv",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "forge-test-specific",
+            "type": "shell",
+            "command": "forge test --match-contract StakerTest --match-test ${input:testName} -vvv",
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "forge-fmt",
+            "type": "shell",
+            "command": "forge fmt",
+            "group": "none",
+            "presentation": {
+                "reveal": "silent"
+            }
+        },
+        {
+            "label": "forge-clean",
+            "type": "shell",
+            "command": "forge clean && forge cache clean",
+            "group": "none"
+        },
+        {
+            "label": "test-deployed",
+            "type": "shell",
+            "command": "forge test --fork-url ${env:RPC_URL} --fork-block-number 1 --sender ${env:DEPLOYER_ADDRESS} -vv",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testName",
+            "type": "promptString",
+            "description": "Name of the test to run"
+        }
+    ]
+}

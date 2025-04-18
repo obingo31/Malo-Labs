@@ -79,7 +79,9 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
     // Fee Management
     uint256 public constant MAX_FEE = 100; // 10% in basis points
 
-    modifier updateReward(address account) {
+    modifier updateReward(
+        address account
+    ) {
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = block.timestamp > periodFinish ? periodFinish : block.timestamp;
         if (account != address(0)) {
@@ -135,14 +137,18 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
         return rewardPerTokenStored + (timeElapsed * rewardRate * PRECISION_FACTOR) / effectiveSupply;
     }
 
-    function earned(address account) public view returns (uint256) {
+    function earned(
+        address account
+    ) public view returns (uint256) {
         return (_balances[account] * (rewardPerToken() - userRewardPerTokenPaid[account])) / PRECISION_FACTOR
             + rewards[account];
     }
 
     /// @notice Stake tokens for the caller
     /// @param amount The amount of tokens to stake
-    function stake(uint256 amount) external nonReentrant whenNotPaused updateReward(msg.sender) {
+    function stake(
+        uint256 amount
+    ) external nonReentrant whenNotPaused updateReward(msg.sender) {
         _stakeFor(msg.sender, msg.sender, amount);
     }
 
@@ -155,7 +161,9 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
 
     /// @notice Unstake tokens
     /// @param _amount The amount of tokens to unstake
-    function unstake(uint256 _amount) external nonReentrant whenNotPaused updateReward(msg.sender) {
+    function unstake(
+        uint256 _amount
+    ) external nonReentrant whenNotPaused updateReward(msg.sender) {
         if (_amount == 0) revert Errors.ZeroAmount();
         _unstake(msg.sender, _amount);
     }
@@ -185,11 +193,11 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
     /// @param _lockManager Address of the lock manager
     /// @param _allowance Amount of tokens the manager can lock
     /// @param _data Additional data to pass to the lock manager
-    function allowManager(address _lockManager, uint256 _allowance, bytes calldata _data)
-        external
-        nonReentrant
-        whenNotPaused
-    {
+    function allowManager(
+        address _lockManager,
+        uint256 _allowance,
+        bytes calldata _data
+    ) external nonReentrant whenNotPaused {
         Lock storage lock_ = _accounts[msg.sender].locks[_lockManager];
         if (lock_.allowance > 0) revert Errors.LockAlreadyExists();
         if (_allowance == 0) revert Errors.ZeroAmount();
@@ -214,11 +222,11 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
     /// @param _user Owner of the locked tokens
     /// @param _lockManager Address of the lock manager
     /// @param _allowance Amount to decrease allowance by
-    function decreaseLockAllowance(address _user, address _lockManager, uint256 _allowance)
-        external
-        nonReentrant
-        whenNotPaused
-    {
+    function decreaseLockAllowance(
+        address _user,
+        address _lockManager,
+        uint256 _allowance
+    ) external nonReentrant whenNotPaused {
         if (msg.sender != _user && msg.sender != _lockManager) revert Errors.NotAuthorized();
         if (_allowance == 0) revert Errors.ZeroAmount();
 
@@ -288,12 +296,11 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
     /// @param _from User to slash from
     /// @param _to User to transfer tokens to
     /// @param _amount Amount to slash
-    function slash(address _from, address _to, uint256 _amount)
-        external
-        nonReentrant
-        whenNotPaused
-        onlyRole(LOCK_MANAGER_ROLE)
-    {
+    function slash(
+        address _from,
+        address _to,
+        uint256 _amount
+    ) external nonReentrant whenNotPaused onlyRole(LOCK_MANAGER_ROLE) {
         if (_amount == 0) revert Errors.ZeroAmount();
         _unlockUnsafe(_from, msg.sender, _amount);
         _transfer(_from, _to, _amount);
@@ -303,12 +310,11 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
     /// @param _from User to slash from
     /// @param _to Recipient address
     /// @param _amount Amount to slash and unstake
-    function slashAndUnstake(address _from, address _to, uint256 _amount)
-        external
-        nonReentrant
-        whenNotPaused
-        onlyRole(LOCK_MANAGER_ROLE)
-    {
+    function slashAndUnstake(
+        address _from,
+        address _to,
+        uint256 _amount
+    ) external nonReentrant whenNotPaused onlyRole(LOCK_MANAGER_ROLE) {
         if (_amount == 0) revert Errors.ZeroAmount();
         _unlockUnsafe(_from, msg.sender, _amount);
         _transferAndUnstake(_from, _to, _amount);
@@ -329,11 +335,15 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
     }
 
     // Reward Management
-    function notifyRewardAmount(uint256 reward) external override onlyRewardsDistribution {
+    function notifyRewardAmount(
+        uint256 reward
+    ) external override onlyRewardsDistribution {
         _setRewardRate(reward / rewardPeriod);
     }
 
-    function _setRewardRate(uint256 _rewardRate) internal updateReward(address(0)) {
+    function _setRewardRate(
+        uint256 _rewardRate
+    ) internal updateReward(address(0)) {
         if (block.timestamp < periodFinish) revert Errors.PreviousPeriodActive();
         if (_rewardRate == 0) revert Errors.ZeroAmount();
 
@@ -347,24 +357,32 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
         emit RewardRateUpdated(_rewardRate);
     }
 
-    function setRewardRate(uint256 _rewardRate) external onlyRewardsDistribution {
+    function setRewardRate(
+        uint256 _rewardRate
+    ) external onlyRewardsDistribution {
         _setRewardRate(_rewardRate);
     }
 
-    function setRewardPeriod(uint256 newPeriod) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setRewardPeriod(
+        uint256 newPeriod
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (newPeriod == 0) revert Errors.InvalidRewardPeriod();
         if (block.timestamp <= periodFinish) revert Errors.ActiveRewardsPeriod();
         rewardPeriod = newPeriod;
         emit RewardPeriodUpdated(newPeriod);
     }
 
-    function setProtocolFee(uint256 newFee) external onlyRole(FEE_SETTER_ROLE) {
+    function setProtocolFee(
+        uint256 newFee
+    ) external onlyRole(FEE_SETTER_ROLE) {
         if (newFee > MAX_FEE) revert Errors.InvalidProtocolFee();
         protocolFee = newFee;
         emit ProtocolFeeUpdated(newFee);
     }
 
-    function setFeeRecipient(address newRecipient) external onlyRole(FEE_SETTER_ROLE) {
+    function setFeeRecipient(
+        address newRecipient
+    ) external onlyRole(FEE_SETTER_ROLE) {
         if (newRecipient == address(0)) revert Errors.ZeroAddress();
         feeRecipient = newRecipient;
         emit FeeRecipientUpdated(newRecipient);
@@ -438,9 +456,12 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
         emit Withdrawn(_from, _amount);
     }
 
-    function _increaseLockAllowance(address _user, address _lockManager, Lock storage _lock, uint256 _allowance)
-        internal
-    {
+    function _increaseLockAllowance(
+        address _user,
+        address _lockManager,
+        Lock storage _lock,
+        uint256 _allowance
+    ) internal {
         if (_allowance == 0) revert Errors.ZeroAmount();
 
         uint256 newAllowance = _lock.allowance + _allowance;
@@ -466,7 +487,9 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
         return _totalSupply;
     }
 
-    function balanceOf(address account) public view returns (uint256) {
+    function balanceOf(
+        address account
+    ) public view returns (uint256) {
         return _balances[account];
     }
 
@@ -474,11 +497,15 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
         return rewardRate * rewardPeriod;
     }
 
-    function lockedBalanceOf(address _user) public view returns (uint256) {
+    function lockedBalanceOf(
+        address _user
+    ) public view returns (uint256) {
         return _accounts[_user].totalLocked;
     }
 
-    function unlockedBalanceOf(address _user) public view returns (uint256) {
+    function unlockedBalanceOf(
+        address _user
+    ) public view returns (uint256) {
         return _balances[_user] - lockedBalanceOf(_user);
     }
 
@@ -488,11 +515,12 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
         allowance = lock_.allowance;
     }
 
-    function _canUnlock(address _sender, address _user, address _lockManager, uint256 _amount)
-        internal
-        view
-        returns (bool)
-    {
+    function _canUnlock(
+        address _sender,
+        address _user,
+        address _lockManager,
+        uint256 _amount
+    ) internal view returns (bool) {
         Lock storage lock_ = _accounts[_user].locks[_lockManager];
         if (lock_.allowance == 0) return false;
 

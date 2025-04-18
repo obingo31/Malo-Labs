@@ -6,23 +6,37 @@ import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol"
 
 interface IStaking is IAccessControl {
     // Core Functions
-    function stake(uint256 amount) external;
+    function stake(
+        uint256 amount
+    ) external;
     function unstake(address _user, uint256 _amount, bytes memory data) external;
     function stakeFor(address _user, uint256 _amount, bytes calldata _data) external;
     function claimRewards() external;
     function emergencyWithdraw() external;
 
     // Admin Functions
-    function setProtocolFee(uint256 fee) external;
-    function setRewardRate(uint256 rate) external;
-    function setRewardPeriod(uint256 period) external;
-    function setFeeRecipient(address recipient) external;
+    function setProtocolFee(
+        uint256 fee
+    ) external;
+    function setRewardRate(
+        uint256 rate
+    ) external;
+    function setRewardPeriod(
+        uint256 period
+    ) external;
+    function setFeeRecipient(
+        address recipient
+    ) external;
     function pause() external;
     function unpause() external;
 
     // View Functions
-    function balanceOf(address account) external view returns (uint256);
-    function earned(address account) external view returns (uint256);
+    function balanceOf(
+        address account
+    ) external view returns (uint256);
+    function earned(
+        address account
+    ) external view returns (uint256);
     function totalStaked() external view returns (uint256);
     function totalRewardsDistributed() external view returns (uint256);
     function rewardRate() external view returns (uint256);

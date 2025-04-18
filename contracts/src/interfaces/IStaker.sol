@@ -22,11 +22,15 @@ interface IStaker {
     function paused() external view returns (bool);
 
     // User-specific getters
-    function stakedBalanceOf(address user) external view returns (uint256);
+    function stakedBalanceOf(
+        address user
+    ) external view returns (uint256);
     function earned(address user, address token) external view returns (uint256);
 
     // Reward management
-    function rewards(address token) external view returns (Reward memory);
+    function rewards(
+        address token
+    ) external view returns (Reward memory);
     function rewardTokens() external view returns (IERC20[] memory);
 
     // Access control

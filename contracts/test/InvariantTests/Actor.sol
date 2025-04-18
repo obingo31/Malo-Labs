@@ -26,10 +26,7 @@ contract Actor {
      * @return success Whether the call was successful
      * @return returnData The data returned by the call
      */
-    function proxy(address target, bytes memory callData) 
-        external 
-        returns (bool success, bytes memory returnData) 
-    {
+    function proxy(address target, bytes memory callData) external returns (bool success, bytes memory returnData) {
         require(_isValidTarget(target), "Invalid target contract");
         (success, returnData) = target.call(callData);
     }
@@ -50,7 +47,9 @@ contract Actor {
      * @param token The token to check
      * @return bool Whether the token is valid
      */
-    function _isValidToken(address token) internal view returns (bool) {
+    function _isValidToken(
+        address token
+    ) internal view returns (bool) {
         for (uint256 i = 0; i < tokens.length; i++) {
             if (tokens[i] == token) return true;
         }
@@ -62,7 +61,9 @@ contract Actor {
      * @param target The contract to check
      * @return bool Whether the contract is valid
      */
-    function _isValidTarget(address target) internal view returns (bool) {
+    function _isValidTarget(
+        address target
+    ) internal view returns (bool) {
         for (uint256 i = 0; i < targetContracts.length; i++) {
             if (targetContracts[i] == target) return true;
         }

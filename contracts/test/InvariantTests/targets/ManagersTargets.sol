@@ -15,17 +15,23 @@ abstract contract ManagersTargets is BaseTargetFunctions, Properties {
     // == ACTOR HANDLERS == //
 
     /// @dev Start acting as another actor
-    function switchActor(uint256 entropy) public {
+    function switchActor(
+        uint256 entropy
+    ) public {
         _switchActor(entropy);
     }
 
     /// @dev Starts using a new asset
-    function switch_asset(uint256 entropy) public {
+    function switch_asset(
+        uint256 entropy
+    ) public {
         _switchAsset(entropy);
     }
 
     /// @dev Deploy a new token and add it to the list of assets, then set it as the current asset
-    function add_new_asset(uint8 decimals) public returns (address) {
+    function add_new_asset(
+        uint8 decimals
+    ) public returns (address) {
         address newAsset = _newAsset(decimals);
         return newAsset;
     }

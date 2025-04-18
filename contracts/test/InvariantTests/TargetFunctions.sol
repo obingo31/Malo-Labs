@@ -20,7 +20,9 @@ abstract contract TargetFunctions is AdminTargets, DoomsdayTargets, ManagersTarg
     }
 
     ///@dev If newVotingPeriod is nonzero, assert that the voting period was updated.
-    function staking_updateVotingPeriod1(uint256 newVotingPeriod) public updateGhosts asAdmin {
+    function staking_updateVotingPeriod1(
+        uint256 newVotingPeriod
+    ) public updateGhosts asAdmin {
         try malGovernanceStaking.updateVotingPeriod(newVotingPeriod) {
             if (newVotingPeriod != 0) {
                 t(malGovernanceStaking.votingPeriod() == newVotingPeriod, "votingPeriod mismatch");
@@ -34,7 +36,9 @@ abstract contract TargetFunctions is AdminTargets, DoomsdayTargets, ManagersTarg
         }
     }
 
-    function staking_updateVotingPeriod2(uint256 newVotingPeriod) public updateGhosts asAdmin {
+    function staking_updateVotingPeriod2(
+        uint256 newVotingPeriod
+    ) public updateGhosts asAdmin {
         __before();
 
         malGovernanceStaking.updateVotingPeriod(newVotingPeriod);
@@ -46,7 +50,9 @@ abstract contract TargetFunctions is AdminTargets, DoomsdayTargets, ManagersTarg
         }
     }
 
-    function handler_updateQuorum(uint256 newPercentage) external updateGhosts asAdmin {
+    function handler_updateQuorum(
+        uint256 newPercentage
+    ) external updateGhosts asAdmin {
         vm.assume(newPercentage <= 100);
 
         try malGovernanceStaking.updateQuorum(newPercentage) {
@@ -66,8 +72,4 @@ abstract contract TargetFunctions is AdminTargets, DoomsdayTargets, ManagersTarg
 
         malGovernanceStaking.createProposal(target, data);
     }
-
-    
 }
-
-

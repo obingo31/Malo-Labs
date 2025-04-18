@@ -7,16 +7,22 @@ contract TestVault {
     IERC20 public token;
     mapping(address => uint256) public balances;
 
-    constructor(address _token) {
+    constructor(
+        address _token
+    ) {
         token = IERC20(_token);
     }
 
-    function deposit(uint256 amount) external {
+    function deposit(
+        uint256 amount
+    ) external {
         token.transferFrom(msg.sender, address(this), amount);
         balances[msg.sender] += amount;
     }
 
-    function withdraw(uint256 amount) external {
+    function withdraw(
+        uint256 amount
+    ) external {
         require(balances[msg.sender] >= amount, "Insufficient balance");
         token.transfer(msg.sender, amount);
         balances[msg.sender] -= amount;

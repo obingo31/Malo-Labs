@@ -45,7 +45,9 @@ abstract contract ActorManager is BaseSetup {
         revert NoDifferentActor();
     }
 
-    function _getRandomActor(uint256 entropy) internal view returns (address) {
+    function _getRandomActor(
+        uint256 entropy
+    ) internal view returns (address) {
         address[] memory actors = _getActors();
         return actors[entropy % actors.length];
     }
@@ -54,7 +56,9 @@ abstract contract ActorManager is BaseSetup {
         return _actors.values();
     }
 
-    function _enableActor(address target) internal {
+    function _enableActor(
+        address target
+    ) internal {
         require(_actors.contains(target), "Actor not registered");
         _actor = target;
     }
@@ -63,13 +67,17 @@ abstract contract ActorManager is BaseSetup {
         _actor = address(this);
     }
 
-    function _addActor(address target) internal {
+    function _addActor(
+        address target
+    ) internal {
         if (target == address(0)) revert Errors.InvalidAddress();
         if (target == address(this)) revert DefaultActor();
         if (!_actors.add(target)) revert Errors.ActorExists();
     }
 
-    function _removeActor(address target) internal {
+    function _removeActor(
+        address target
+    ) internal {
         if (target == address(this)) revert DefaultActor();
         if (!_actors.contains(target)) revert ActorNotAdded();
 
@@ -79,7 +87,9 @@ abstract contract ActorManager is BaseSetup {
         _actors.remove(target);
     }
 
-    function _switchActor(uint256 entropy) internal {
+    function _switchActor(
+        uint256 entropy
+    ) internal {
         _disableActor();
 
         address target = _actors.at(entropy % _actors.length());

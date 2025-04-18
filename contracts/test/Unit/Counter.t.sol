@@ -16,7 +16,9 @@ contract CounterTest is Test {
         assertEq(counter.number(), 2);
     }
 
-    function testFuzz_SetNumber(uint256 x) public {
+    function testFuzz_SetNumber(
+        uint256 x
+    ) public {
         counter.setNumber(x);
         if (x != 0) {
             assertEq(counter.number(), x);

@@ -16,7 +16,7 @@ contract VulnerableToken {
         _symbol = "VULN";
 
         // Mint initial tokens to the deployer
-        _mint(msg.sender, 1000000 * 10 ** 18);
+        _mint(msg.sender, 1_000_000 * 10 ** 18);
     }
 
     function name() public view returns (string memory) {
@@ -35,7 +35,9 @@ contract VulnerableToken {
         return _totalSupply;
     }
 
-    function balanceOf(address account) public view returns (uint256) {
+    function balanceOf(
+        address account
+    ) public view returns (uint256) {
         return _balances[account];
     }
 

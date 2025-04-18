@@ -61,7 +61,9 @@ contract DepositContract {
     }
 
     // Standard time-locked withdrawal
-    function withdraw(uint256 depositId) external {
+    function withdraw(
+        uint256 depositId
+    ) external {
         require(depositId < deposits[msg.sender].length, "Invalid deposit ID");
         Deposit storage userDeposit = deposits[msg.sender][depositId];
 
@@ -79,7 +81,9 @@ contract DepositContract {
     }
 
     // Force withdrawal before lock period expires with a penalty fee.
-    function forceWithdraw(uint256 depositId) external {
+    function forceWithdraw(
+        uint256 depositId
+    ) external {
         require(depositId < deposits[msg.sender].length, "Invalid deposit ID");
         Deposit storage userDeposit = deposits[msg.sender][depositId];
         require(!userDeposit.withdrawn, "Already withdrawn");
@@ -114,7 +118,9 @@ contract DepositContract {
         emit Unpaused(msg.sender);
     }
 
-    function transferOwnership(address newOwner) external onlyOwner {
+    function transferOwnership(
+        address newOwner
+    ) external onlyOwner {
         require(newOwner != address(0), "Invalid address");
         emit OwnershipTransferred(owner, newOwner);
         owner = newOwner;
@@ -148,7 +154,9 @@ contract DepositContract {
     }
 
     // Admin can update the lock period for testing purposes.
-    function updateLockPeriod(uint256 newLockPeriod) external onlyOwner {
+    function updateLockPeriod(
+        uint256 newLockPeriod
+    ) external onlyOwner {
         lockPeriod = newLockPeriod;
         emit LockPeriodUpdated(newLockPeriod);
     }
@@ -156,23 +164,26 @@ contract DepositContract {
     // Additional view functions
 
     // Returns the number of deposits for a given user.
-    function getDepositCount(address user) external view returns (uint256) {
+    function getDepositCount(
+        address user
+    ) external view returns (uint256) {
         return deposits[user].length;
     }
 
     // Returns the details of a specific deposit.
-    function getDepositDetails(address user, uint256 depositId)
-        external
-        view
-        returns (uint256 amount, uint256 timestamp, bool withdrawn)
-    {
+    function getDepositDetails(
+        address user,
+        uint256 depositId
+    ) external view returns (uint256 amount, uint256 timestamp, bool withdrawn) {
         require(depositId < deposits[user].length, "Invalid deposit ID");
         Deposit memory d = deposits[user][depositId];
         return (d.amount, d.timestamp, d.withdrawn);
     }
 
     // Returns the current balance of a user.
-    function getUserBalance(address user) external view returns (uint256) {
+    function getUserBalance(
+        address user
+    ) external view returns (uint256) {
         return balances[user];
     }
 

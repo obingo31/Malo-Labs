@@ -25,6 +25,4 @@ abstract contract Properties is BeforeAfter, Asserts {
         require(isValid, "Delegation not reset after full withdrawal");
         return true;
     }
-
-    
 }

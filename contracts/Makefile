@@ -86,6 +86,7 @@ CONTAINER_NAME = eigenlayer-contracts
 .PHONY: install-hooks
 install-hooks:
 	cp bin/pre-commit.sh .git/hooks/pre-commit
+	chmod +x .git/hooks/pre-commit
 
 .PHONY: install-deps
 install-deps:

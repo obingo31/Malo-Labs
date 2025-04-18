@@ -41,7 +41,9 @@ contract RewardsTest is Test {
         staking.claimRewards();
     }
 
-    function _fundAndNotifyRewards(uint256 amount) private {
+    function _fundAndNotifyRewards(
+        uint256 amount
+    ) private {
         maloToken.mint(address(staking), amount);
         vm.prank(address(this));
         staking.notifyRewardAmount(amount);
@@ -55,7 +57,9 @@ contract RewardsTest is Test {
         staking.stake(amount);
     }
 
-    function _setProtocolFee(uint256 fee) private {
+    function _setProtocolFee(
+        uint256 fee
+    ) private {
         vm.prank(address(this));
         staking.setProtocolFee(fee);
     }

@@ -63,7 +63,9 @@ abstract contract AssetManager {
     }
 
     // Enable a specific asset as the active one
-    function _enableAsset(address target) internal {
+    function _enableAsset(
+        address target
+    ) internal {
         if (!_assets.contains(target)) {
             revert NotAdded();
         }
@@ -76,29 +78,37 @@ abstract contract AssetManager {
     }
 
     // Add a new asset to the set
-    function _addAsset(address target) internal {
+    function _addAsset(
+        address target
+    ) internal {
         if (target == address(0)) revert InvalidAddress();
         if (_assets.contains(target)) revert Exists();
         _assets.add(target);
     }
 
     // Remove an asset from the set
-    function _removeAsset(address target) internal {
+    function _removeAsset(
+        address target
+    ) internal {
         if (!_assets.contains(target)) revert NotAdded();
         if (target == __asset) _disableAsset();
         _assets.remove(target);
     }
 
     // Switch to a random asset from the set
-    function _switchAsset(uint256 entropy) internal {
+    function _switchAsset(
+        uint256 entropy
+    ) internal {
         _disableAsset();
         _enableAsset(_assets.at(entropy % _assets.length()));
     }
 
     // Mint initial balances and approve allowances for the active asset
-    function _finalizeAssetDeployment(address[] memory actorsArray, address[] memory approvalArray, uint256 amount)
-        internal
-    {
+    function _finalizeAssetDeployment(
+        address[] memory actorsArray,
+        address[] memory approvalArray,
+        uint256 amount
+    ) internal {
         _mintAssetToAllActors(actorsArray, amount);
         for (uint256 i = 0; i < approvalArray.length; i++) {
             _approveAssetToAddressForAllActors(actorsArray, approvalArray[i]);

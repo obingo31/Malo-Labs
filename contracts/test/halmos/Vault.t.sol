@@ -6,11 +6,15 @@ import {SymTest} from "halmos-cheatcodes/SymTest.sol";
 import {Vault} from "../mocks/Vault.sol";
 
 contract VaultMock is Vault {
-    function setTotalAssets(uint256 _totalAssets) public {
+    function setTotalAssets(
+        uint256 _totalAssets
+    ) public {
         totalAssets = _totalAssets;
     }
 
-    function setTotalShares(uint256 _totalShares) public {
+    function setTotalShares(
+        uint256 _totalShares
+    ) public {
         totalShares = _totalShares;
     }
 }
@@ -29,7 +33,9 @@ contract VaultTest is SymTest {
 
     /// need to set a timeout for this test, the solver can run for hours
     /// @custom:halmos --solver-timeout-assertion 10000
-    function check_deposit(uint256 assets) public {
+    function check_deposit(
+        uint256 assets
+    ) public {
         uint256 A1 = vault.totalAssets();
         uint256 S1 = vault.totalShares();
 
@@ -42,7 +48,9 @@ contract VaultTest is SymTest {
         assert(A1 * S2 <= A2 * S1); // no counterexample
     }
 
-    function check_mint(uint256 shares) public {
+    function check_mint(
+        uint256 shares
+    ) public {
         uint256 A1 = vault.totalAssets();
         uint256 S1 = vault.totalShares();
 

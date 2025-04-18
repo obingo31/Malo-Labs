@@ -20,9 +20,13 @@ abstract contract RewardsDistributionRecipient {
         _;
     }
 
-    function notifyRewardAmount(uint256 reward) external virtual;
+    function notifyRewardAmount(
+        uint256 reward
+    ) external virtual;
 
-    function setRewardsDistribution(address _rewardsDistribution) external virtual {
+    function setRewardsDistribution(
+        address _rewardsDistribution
+    ) external virtual {
         rewardsDistribution = _rewardsDistribution;
     }
 }

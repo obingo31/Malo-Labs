@@ -9,12 +9,14 @@ contract MockVotesToken is ERC20, IVotes {
     mapping(address => uint256) private _voteBalances;
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
-        _mint(msg.sender, 1000000 * 10 ** decimals());
+        _mint(msg.sender, 1_000_000 * 10 ** decimals());
     }
 
     // --- IVotes Interface Implementation ---
 
-    function getVotes(address account) public view override returns (uint256) {
+    function getVotes(
+        address account
+    ) public view override returns (uint256) {
         return _voteBalances[account];
     }
 
@@ -22,15 +24,21 @@ contract MockVotesToken is ERC20, IVotes {
         revert("Past votes not implemented");
     }
 
-    function getPastTotalSupply(uint256) public pure override returns (uint256) {
+    function getPastTotalSupply(
+        uint256
+    ) public pure override returns (uint256) {
         revert("Past total supply not implemented");
     }
 
-    function delegates(address account) public view override returns (address) {
+    function delegates(
+        address account
+    ) public view override returns (address) {
         return _delegates[account] != address(0) ? _delegates[account] : account;
     }
 
-    function delegate(address delegatee) public override {
+    function delegate(
+        address delegatee
+    ) public override {
         require(delegatee != address(0), "Cannot delegate to zero address");
         address currentDelegate = delegates(msg.sender);
 

@@ -18,7 +18,9 @@ abstract contract DoomsdayTargets is BaseTargetFunctions, Properties {
 
     /// Example doomsday function: Ensure that updating the voting period never reverts.
     /// This function is executed as an admin, and the state is captured before and after via our ghost system.
-    function doomsday_updateVotingPeriod_never_reverts(uint256 newVotingPeriod) public stateless asAdmin {
+    function doomsday_updateVotingPeriod_never_reverts(
+        uint256 newVotingPeriod
+    ) public stateless asAdmin {
         try malGovernanceStaking.updateVotingPeriod(newVotingPeriod) {
             // If the update succeeds, nothing further is done.
         } catch {

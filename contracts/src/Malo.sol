@@ -66,7 +66,9 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
     /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
     /*                             Core                           */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
-    function stake(uint256 amount) external nonReentrant whenNotPaused updateReward(msg.sender) {
+    function stake(
+        uint256 amount
+    ) external nonReentrant whenNotPaused updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
 
         _totalStaked += amount;
@@ -77,7 +79,9 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) public nonReentrant whenNotPaused updateReward(msg.sender) {
+    function withdraw(
+        uint256 amount
+    ) public nonReentrant whenNotPaused updateReward(msg.sender) {
         require(amount > 0 && _balances[msg.sender] >= amount, "Invalid amount");
 
         uint256 fee = 0;
@@ -118,7 +122,9 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
     }
 
     // Administration functions -----------------------------------------------
-    function notifyRewardAmount(uint256 reward) external onlyRole(REWARDS_ADMIN_ROLE) updateReward(address(0)) {
+    function notifyRewardAmount(
+        uint256 reward
+    ) external onlyRole(REWARDS_ADMIN_ROLE) updateReward(address(0)) {
         require(reward > 0, "No reward");
         require(reward >= rewardDuration, "Reward too small");
 
@@ -139,10 +145,11 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
         emit RewardParametersUpdated(rewardRate, periodFinish - block.timestamp, reward);
     }
 
-    function setFeeConfig(uint256 newClaimFeeBps, uint256 newWithdrawalFeeBps, address newReceiver)
-        external
-        onlyRole(LIQUIDITY_GUARDIAN_ROLE)
-    {
+    function setFeeConfig(
+        uint256 newClaimFeeBps,
+        uint256 newWithdrawalFeeBps,
+        address newReceiver
+    ) external onlyRole(LIQUIDITY_GUARDIAN_ROLE) {
         require(newClaimFeeBps <= MAX_FEE_BPS && newWithdrawalFeeBps <= MAX_FEE_BPS, "Fee too high");
         require(newReceiver != address(0), "Invalid receiver");
 
@@ -151,7 +158,9 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
         emit FeeConfigUpdated(newWithdrawalFeeBps, newReceiver);
     }
 
-    function setRewardDuration(uint256 newDuration) external onlyRole(REWARDS_ADMIN_ROLE) {
+    function setRewardDuration(
+        uint256 newDuration
+    ) external onlyRole(REWARDS_ADMIN_ROLE) {
         require(newDuration > 0, "Invalid duration");
         rewardDuration = newDuration;
     }
@@ -182,7 +191,9 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
         return rewardPerTokenStored + (timeElapsed * rewardRate * 1e18) / _totalStaked;
     }
 
-    function earned(address account) public view returns (uint256) {
+    function earned(
+        address account
+    ) public view returns (uint256) {
         return (_balances[account] * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18 + rewards[account];
     }
 
@@ -191,7 +202,9 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
     }
 
     // Modifiers -------------------------------------------------------------
-    modifier updateReward(address account) {
+    modifier updateReward(
+        address account
+    ) {
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = block.timestamp < periodFinish ? block.timestamp : periodFinish;
         if (account != address(0)) {

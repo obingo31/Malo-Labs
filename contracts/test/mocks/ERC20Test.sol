@@ -68,10 +68,13 @@ abstract contract ERC20Test is SymTest, Test {
         assert(IERC20(token).balanceOf(other) == oldBalanceOther);
     }
 
-    function check_transferFrom(address caller, address from, address to, address other, uint256 amount)
-        public
-        virtual
-    {
+    function check_transferFrom(
+        address caller,
+        address from,
+        address to,
+        address other,
+        uint256 amount
+    ) public virtual {
         require(other != from);
         require(other != to);
 

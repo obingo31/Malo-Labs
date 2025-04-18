@@ -37,7 +37,7 @@ contract MALGovernanceStakingFuzzer is Test, Setup {
         uint256 stakeAmount,
         uint256 votingPeriod
     ) public {
-        stakeAmount = bound(stakeAmount, 100 ether, 10000 ether);
+        stakeAmount = bound(stakeAmount, 100 ether, 10_000 ether);
         votingPeriod = bound(votingPeriod, 1 hours, 30 days);
 
         vm.startPrank(daoMultisig);
@@ -70,7 +70,7 @@ contract MALGovernanceStakingFuzzer is Test, Setup {
 
     function testFuzz_ExecutionFailureHandling(bytes calldata callData, bool useDecimalReverter) public {
         address target = useDecimalReverter ? address(reverterWithDecimals) : address(reverter);
-        uint256 stakeAmount = 20000 ether;
+        uint256 stakeAmount = 20_000 ether;
         address actor = _currentActor();
 
         vm.startPrank(actor);

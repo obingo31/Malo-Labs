@@ -27,7 +27,9 @@ abstract contract rewardToken is ERC20, Ownable {
      * @notice Burns tokens from the caller's account.
      * @param amount The amount of tokens to burn.
      */
-    function burn(uint256 amount) external {
+    function burn(
+        uint256 amount
+    ) external {
         _burn(msg.sender, amount);
     }
 }
