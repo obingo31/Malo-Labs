@@ -24,9 +24,9 @@ contract Gov is
         TimelockController _timelock
     )
         Governor("MyGovernor")
-        GovernorSettings(7200, /* 1 day */ 50_400, /* 1 week */ 0)
+        GovernorSettings(7200, /* 1 day */ 50_400, /* 1 week */ 1e18)
         GovernorVotes(_token)
-        GovernorVotesQuorumFraction(4)
+        GovernorVotesQuorumFraction(20)
         GovernorTimelockControl(_timelock)
     {}
 

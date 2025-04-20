@@ -25,3 +25,4 @@ call_sequences/
 test_results/
 node_modules/
 
+contracts/logs/

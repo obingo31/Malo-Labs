@@ -1,0 +1,10 @@
+{
+    "solidity.packageDefaultDependenciesContractsDirectory": "src",
+    "solidity.packageDefaultDependenciesDirectory": "lib",
+    "testExplorer.useNativeTesting": true,
+    "mochaExplorer.cwd": "${workspaceFolder}",
+    "solidity.formatter": "forge",
+    "editor.formatOnSave": true,
+    "solidity.compileUsingRemoteVersion": "0.8.23",
+    "testing.defaultGutterClickAction": "debug"
+}

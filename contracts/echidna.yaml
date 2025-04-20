@@ -1,8 +1,6 @@
-# codeSize max code size for deployed contracts
-codeSize: 24576
-allContracts: false
+
 testMode: "assertion"
-prefix: "property_"
+prefix: "invariant_"
 coverage: true
 corpusDir: "echidna"
 balanceAddr: 0x1043561a8829300000
@@ -12,6 +10,3 @@ cryticArgs: ["--foundry-compile-all"]
 deployer: "0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496"
 contractAddr: "0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496"
 shrinkLimit: 100000
-workers: 10
-quiet: true
-filterFunctions: ["handler_updateQuorum"]

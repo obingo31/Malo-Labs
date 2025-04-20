@@ -8,16 +8,16 @@
     "corpusDirectory": "medusa",
     "coverageEnabled": true,
     "deploymentOrder": [
-      "Tester"
+      "CryticTester"
     ],
     "targetContracts": [
-      "Tester"
+      "CryticTester"
     ],
     "targetContractsBalances": [
       "0x27b46536c66c8e3000000"
     ],
     "constructorArgs": {},
-    "deployerAddress": "0x30000",
+    "deployerAddress": "0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496",
     "senderAddresses": [
       "0x10000",
       "0x20000",
@@ -80,21 +80,21 @@
   "compilation": {
     "platform": "crytic-compile",
     "platformConfig": {
-      "target": "test/echidna/Tester.t.sol",
-      "solcVersion": "0.8.20",
-      "exportDirectory": "artifacts",
+      "target": ".",
+      "solcVersion": "",
+      "exportDirectory": "",
       "args": [
         "--foundry-compile-all"
       ]
     }
   },
   "slither": {
-    "useSlither": true,
-    "cachePath": "slither_results.json",
-    "args": []
-  },
+		"useSlither": true,
+		"cachePath": "slither_results.json",
+		"args": []
+	},
   "logging": {
-    "level": "debug",
-    "logDirectory": "logs"
+    "level": "info",
+    "logDirectory": ""
   }
 }

@@ -6,7 +6,7 @@ import {vm} from "@chimera/Hevm.sol";
 import {ActorManager} from "@recon/ActorManager.sol";
 import {AssetManager} from "@recon/AssetManager.sol";
 import {Utils} from "@recon/Utils.sol";
-import {MALGovernanceStaking} from "src/MALGovernanceStaking.sol";
+import {MALGovernanceStaking} from "../../src/MALGovernanceStaking.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {MockVotesToken} from "./MockVotesToken.sol";
 

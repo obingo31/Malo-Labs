@@ -32,7 +32,7 @@ ECHIDNA_CONFIG := ./test/echidna/echidna_config.yaml
 CORPUS_DIR := ./test/echidna/_corpus
 
 echidna:
-	echidna ./test/echidna/Setup.t.sol \
+	echidna ./test/echidna/Setup.sol \
 		--contract Setup \
 		--config $(ECHIDNA_CONFIG) \
 		--corpus-dir $(CORPUS_DIR)
