@@ -16,6 +16,7 @@ abstract contract BeforeAfter is Setup {
         uint256 startTime;
         uint256 endTime;
         bool executed;
+        bool expired;
     }
 
     enum OpType {
@@ -74,9 +75,7 @@ abstract contract BeforeAfter is Setup {
         _before.withdrawalCooldown = staking.withdrawalCooldown();
         _before.rewardRate = staking.rewardRate();
         _before.paused = staking.paused();
-        _before.lastStakeTime = staking.lastStakeTime(currentActor);
         _before.userStakes[currentActor] = staking.stakedBalance(currentActor);
-        _before.userRewards[currentActor] = staking.calculateRewards(currentActor);
         _before.sig = msg.sig;
         _before.governanceTokenBalance = govToken.balanceOf(address(staking));
         _before.utilityTokenBalance = utilToken.balanceOf(address(staking));
@@ -90,11 +89,21 @@ abstract contract BeforeAfter is Setup {
                 uint256 againstVotes,
                 uint256 startTime,
                 uint256 endTime,
-                bool executed
+                bool executed,
+                bool expired
             ) = staking.proposals(_before.proposalCount);
 
-            _before.proposals[_before.proposalCount] =
-                Proposal(target, data, proposer, forVotes, againstVotes, startTime, endTime, executed);
+            _before.proposals[_before.proposalCount] = Proposal(
+                target,
+                data,
+                proposer,
+                forVotes,
+                againstVotes,
+                startTime,
+                endTime,
+                executed,
+                expired
+            );
         }
     }
 
@@ -111,9 +120,7 @@ abstract contract BeforeAfter is Setup {
         _after.withdrawalCooldown = staking.withdrawalCooldown();
         _after.rewardRate = staking.rewardRate();
         _after.paused = staking.paused();
-        _after.lastStakeTime = staking.lastStakeTime(currentActor);
         _after.userStakes[currentActor] = staking.stakedBalance(currentActor);
-        _after.userRewards[currentActor] = staking.calculateRewards(currentActor);
         _after.sig = msg.sig;
         _after.governanceTokenBalance = govToken.balanceOf(address(staking));
         _after.utilityTokenBalance = utilToken.balanceOf(address(staking));
@@ -127,11 +134,21 @@ abstract contract BeforeAfter is Setup {
                 uint256 againstVotes,
                 uint256 startTime,
                 uint256 endTime,
-                bool executed
+                bool executed,
+                bool expired
             ) = staking.proposals(_after.proposalCount);
 
-            _after.proposals[_after.proposalCount] =
-                Proposal(target, data, proposer, forVotes, againstVotes, startTime, endTime, executed);
+            _after.proposals[_after.proposalCount] = Proposal(
+                target,
+                data,
+                proposer,
+                forVotes,
+                againstVotes,
+                startTime,
+                endTime,
+                executed,
+                expired
+            );
         }
     }
 }
