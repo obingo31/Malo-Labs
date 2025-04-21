@@ -41,13 +41,13 @@ abstract contract ManagersTargets is BaseTargetFunctions, Properties {
     /// If you don't want to track donations, remove the `updateGhosts`
 
     /// @dev Approve to arbitrary address, uses Actor by default
-    // /// NOTE: You're almost always better off setting approvals in `Setup`
-    // function asset_approve(address to, uint128 amt) public updateGhosts asActor {
-    //     MockERC20(_getAsset()).approve(to, amt);
-    // }
+    /// NOTE: You're almost always better off setting approvals in `Setup`
+    function asset_approve(address to, uint128 amt) public updateGhosts asActor {
+        MockERC20(_getAsset()).approve(to, amt);
+    }
 
-    // /// @dev Mint to arbitrary address, uses owner by default, even though MockERC20 doesn't check
-    // function asset_mint(address to, uint128 amt) public updateGhosts asAdmin {
-    //     MockERC20(_getAsset()).mint(to, amt);
-    // }
+    /// @dev Mint to arbitrary address, uses owner by default, even though MockERC20 doesn't check
+    function asset_mint(address to, uint128 amt) public updateGhosts asAdmin {
+        MockERC20(_getAsset()).mint(to, amt);
+    }
 }

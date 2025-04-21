@@ -1,0 +1,49 @@
+.
+└── withdraw()
+    ├── Branch: Amount > Staked Balance
+    │   └── Scenario: Attempt over-withdrawal
+    │       └── - Setup:
+    │           └── - _stakedBalances[user] = 100
+    │               ├── - Action: withdraw(101)
+    │               └── - Expect: Revert with InsufficientBalance
+    ├── Branch: Amount ≤ Staked Balance
+    ├── Sub-Branch: Cooldown Still Active
+    │   └── Scenario: Early withdrawal attempt
+    │       └── - Setup:
+    │           └── - _stakedBalances[user] = 100
+    │               └── - lastStakeTime[user] = now - (cooldown - 1)
+    │                   └── - Action: withdraw(50)
+    │                       └── - Expect: Revert with CooldownActive
+    ├── Sub-Branch: Cooldown Expired
+    ├── Sub-Sub-Branch: Full Withdrawal
+    │   ├── Scenario: Withdraw entire balance
+    │   │   └── - Setup:
+    │   │       └── - _stakedBalances[user] = 100
+    │   │           └── - lastStakeTime[user] = now - cooldown
+    │   │               └── - Action: `withdraw(100)`
+    │   │                   └── - Expect:
+    │   │                       └── 1. Call to _updateDelegation(user, false)
+    │   │                           └── 2. Successful withdrawal (balance → 0)
+    │   └── Edge Case: Zero balance withdrawal
+    │       └── - Setup:
+    │           └── - _stakedBalances[user] = 0
+    │               └── - lastStakeTime[user] = now - cooldown
+    │                   └── - Action: `withdraw(0)`
+    │                       └── - Expect:
+    │                           └── 1. Call to _updateDelegation(user, false)
+    │                               └── 2. No state change (balance remains 0)
+    └── Sub-Sub-Branch: Partial Withdrawal
+        ├── Scenario: Withdraw portion of balance
+        │   └── - Setup:
+        │       └── - _stakedBalances[user] = 100
+        │           └── - lastStakeTime[user] = now - cooldown
+        │               └── - Action: withdraw(50)
+        │                   └── - Expect:
+        │                       └── 1. No call to _updateDelegation
+        │                           └── 2. Balance reduced to 50
+        └── Edge Case: Cooldown exact expiration
+            └── Setup:
+                └── _stakedBalances[user] = 100
+                    └── lastStakeTime[user] = now - cooldown
+                        └── Action: withdraw(100)
+                            └── Expect: Successful withdrawal

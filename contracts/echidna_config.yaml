@@ -40,7 +40,7 @@ coverage: true
 coverageFormats: ["lcov", "html"]
 
 #directory to save the corpus; by default is disabled
-corpusDir: "/test/echidna/_corpus/echidna/default/_data/corpus"
+corpusDir: "test/echidna/_corpus/echidna/default/_data/corpus"
 
 # constants for corpus mutations (for experimentation only)
 #mutConsts: [100, 1, 1]

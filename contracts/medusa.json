@@ -11,7 +11,8 @@
       "CryticTester"
     ],
     "targetContracts": [
-      "CryticTester"
+      "CryticTester",
+      "MALGovernanceStaking"
     ],
     "targetContractsBalances": [
       "0x27b46536c66c8e3000000"
@@ -52,7 +53,9 @@
       "propertyTesting": {
         "enabled": true,
         "testPrefixes": [
-          "invariant_"
+          "invariant_",
+          "handler_",
+          "test_"
         ]
       },
       "optimizationTesting": {

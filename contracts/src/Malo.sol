@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import {rewardToken} from "../test/mocks/rewardToken.sol";
+// import {RewardToken} from "./test/mocks/RewardToken.sol"; // Removed or commented out as the file is not found
 
 contract MALO is AccessControl, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
@@ -34,6 +34,7 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
     mapping(address => uint256) public rewards;
     mapping(address => uint256) public vestingStart;
     mapping(address => uint256) public totalVested;
+    mapping(address => uint256) public lastClaimTime;
 
     // Fee configuration
     uint256 public claimLockPeriod = 1 days;
@@ -49,6 +50,7 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
     event EmergencyWithdraw(address indexed user, uint256 amount);
     event FeeConfigUpdated(uint256 newFeeBps, address newReceiver);
     event RewardParametersUpdated(uint256 newRate, uint256 duration, uint256 totalRewards);
+    event AntiDumpParamsUpdated(uint256 maxDailyClaimPercent);
 
     constructor(address _stakingToken, address _malToken, address _admin, address _liquidityGuardian) {
         require(_stakingToken != address(0) && _malToken != address(0), "Zero address");
@@ -68,14 +70,13 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
     function stake(
         uint256 amount
-    ) external nonReentrant whenNotPaused updateReward(msg.sender) {
+    ) public nonReentrant whenNotPaused updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
-
-        _totalStaked += amount;
         _balances[msg.sender] += amount;
-        lastStakeTime[msg.sender] = block.timestamp;
-
-        stakingToken.safeTransferFrom(msg.sender, address(this), amount);
+        if (lastClaimTime[msg.sender] == 0) {
+            lastClaimTime[msg.sender] = block.timestamp;
+        }
+        malToken.safeTransferFrom(msg.sender, address(this), amount);
         emit Staked(msg.sender, amount);
     }
 
@@ -98,30 +99,36 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
         emit Withdrawn(msg.sender, amount, fee);
     }
 
+    /**
+     * @notice Allows users to claim their rewards, limited by maxDailyClaimPercent per claimLockPeriod
+     * @dev Claims are restricted to once per claimLockPeriod, with a cap at maxDailyClaimPercent of unclaimed rewards
+     */
     function claimRewards() public nonReentrant whenNotPaused updateReward(msg.sender) {
+        require(block.timestamp >= lastClaimTime[msg.sender] + claimLockPeriod, "Claim locked");
         uint256 totalReward = rewards[msg.sender];
-        require(totalReward > 0, "No rewards");
-        require(block.timestamp >= vestingStart[msg.sender] + claimLockPeriod, "Vesting active");
+        require(totalReward > 0, "No rewards to claim");
 
-        uint256 elapsed = block.timestamp - vestingStart[msg.sender];
-        uint256 maxClaim = (totalVested[msg.sender] * elapsed) / claimLockPeriod;
+        // Calculate maximum claimable amount based on maxDailyClaimPercent
+        uint256 maxClaim = (totalReward * maxDailyClaimPercent) / 100;
         uint256 claimAmount = totalReward > maxClaim ? maxClaim : totalReward;
 
-        // Calculate and deduct fee
+        // Apply withdrawal fee (if applicable)
         uint256 fee = (claimAmount * withdrawalFeeBps) / MAX_FEE_BPS;
         uint256 netAmount = claimAmount - fee;
 
-        rewards[msg.sender] = totalReward - claimAmount;
-        vestingStart[msg.sender] = block.timestamp;
-        totalVested[msg.sender] = rewards[msg.sender];
+        // Update state before transfers to prevent reentrancy
+        rewards[msg.sender] -= claimAmount;
+        lastClaimTime[msg.sender] = block.timestamp;
 
+        // Transfer tokens
         if (fee > 0) malToken.safeTransfer(feeReceiver, fee);
         malToken.safeTransfer(msg.sender, netAmount);
 
         emit RewardPaid(msg.sender, netAmount, fee);
+        emit RewardParametersUpdated(rewardRate, periodFinish - block.timestamp, totalReward);
     }
-
     // Administration functions -----------------------------------------------
+
     function notifyRewardAmount(
         uint256 reward
     ) external onlyRole(REWARDS_ADMIN_ROLE) updateReward(address(0)) {
@@ -165,10 +172,12 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
         rewardDuration = newDuration;
     }
 
-    function setAntiDumpParams(uint256 lockPeriod, uint256 maxPercent) external onlyRole(LIQUIDITY_GUARDIAN_ROLE) {
-        require(maxPercent <= 100, "Invalid percentage");
-        claimLockPeriod = lockPeriod;
-        maxDailyClaimPercent = maxPercent;
+    function setAntiDumpParams(
+        uint256 _maxDailyClaimPercent
+    ) external onlyOwner {
+        require(_maxDailyClaimPercent <= 100, "Invalid percentage");
+        maxDailyClaimPercent = _maxDailyClaimPercent;
+        emit AntiDumpParamsUpdated(_maxDailyClaimPercent);
     }
 
     function emergencyWithdraw() external nonReentrant whenPaused {
@@ -181,6 +190,24 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
 
         stakingToken.safeTransfer(msg.sender, amount);
         emit EmergencyWithdraw(msg.sender, amount);
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
+    }
+
+    function setVestingStart(address account, uint256 start) external onlyOwner {
+        require(start > 0, "Invalid start time");
+        vestingStart[account] = start;
+    }
+
+    function setVestingEnd(address account, uint256 end) external onlyOwner {
+        require(end > 0, "Invalid end time");
+        totalVested[account] = end;
     }
 
     // Views ------------------------------------------------------------------
@@ -215,6 +242,11 @@ contract MALO is AccessControl, ReentrancyGuard, Pausable {
                 totalVested[account] = rewards[account];
             }
         }
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Caller is not the owner");
         _;
     }
 }

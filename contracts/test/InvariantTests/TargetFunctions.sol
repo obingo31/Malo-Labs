@@ -72,4 +72,70 @@ abstract contract TargetFunctions is AdminTargets, DoomsdayTargets, ManagersTarg
 
         malGovernanceStaking.createProposal(target, data);
     }
+
+    /// AUTO GENERATED TARGET FUNCTIONS - WARNING: DO NOT DELETE OR MODIFY THIS LINE ///
+
+    function mALGovernanceStaking_claimRewards() public asActor {
+        malGovernanceStaking.claimRewards();
+    }
+
+    function mALGovernanceStaking_cleanExpiredProposals() public asActor {
+        malGovernanceStaking.cleanExpiredProposals();
+    }
+
+    function mALGovernanceStaking_createProposal(address target, bytes memory data) public asActor {
+        malGovernanceStaking.createProposal(target, data);
+    }
+
+    function mALGovernanceStaking_executeProposal(
+        uint256 proposalId
+    ) public asActor {
+        malGovernanceStaking.executeProposal(proposalId);
+    }
+
+    function mALGovernanceStaking_grantRole(bytes32 role, address account) public asActor {
+        malGovernanceStaking.grantRole(role, account);
+    }
+
+    function mALGovernanceStaking_renounceRole(bytes32 role, address callerConfirmation) public asActor {
+        malGovernanceStaking.renounceRole(role, callerConfirmation);
+    }
+
+    function mALGovernanceStaking_revokeRole(bytes32 role, address account) public asActor {
+        malGovernanceStaking.revokeRole(role, account);
+    }
+
+    function mALGovernanceStaking_setWithdrawalCooldown(
+        uint256 newCooldown
+    ) public asActor {
+        malGovernanceStaking.setWithdrawalCooldown(newCooldown);
+    }
+
+    function mALGovernanceStaking_stake(
+        uint256 amount
+    ) public asActor {
+        malGovernanceStaking.stake(amount);
+    }
+
+    function mALGovernanceStaking_updateQuorum(
+        uint256 newPercentage
+    ) public asActor {
+        malGovernanceStaking.updateQuorum(newPercentage);
+    }
+
+    function mALGovernanceStaking_updateVotingPeriod(
+        uint256 newPeriod
+    ) public asActor {
+        malGovernanceStaking.updateVotingPeriod(newPeriod);
+    }
+
+    function mALGovernanceStaking_vote(uint256 proposalId, bool support) public asActor {
+        malGovernanceStaking.vote(proposalId, support);
+    }
+
+    function mALGovernanceStaking_withdraw(
+        uint256 amount
+    ) public asActor {
+        malGovernanceStaking.withdraw(amount);
+    }
 }

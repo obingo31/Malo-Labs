@@ -1,61 +1,118 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8.10;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.13;
 
-// import "forge-std/src/Test.sol";
+import {Test, console} from "forge-std/Test.sol";
+import {StakingToken} from "../../src/StakingToken.sol";
+import {MALGovernanceStaking} from "../../src/MALGovernanceStaking.sol";
 
-// import {Staker} from "src/Staker.sol";
-// import {ERC20} from "solmate/src/tokens/ERC20.sol";
+contract WithdrawTest is Test {
+    StakingToken public stakingToken;
+    StakingToken public utilityToken;
+    MALGovernanceStaking public malGovernanceStaking;
+    address public owner;
+    address public daoMultisig;
+    address public user;
+    uint256 public constant STAKE_AMOUNT = 100e18;
+    uint256 public constant COOLDOWN_PERIOD = 7 days;
 
-// import {Errors} from "src/Errors.sol";
+    function setUp() public {
+        owner = makeAddr("owner");
+        daoMultisig = makeAddr("daoMultisig");
+        user = makeAddr("user");
 
-// contract WithdrawTest is  {
-//     function setUp() public override {
+        vm.startPrank(owner);
 
-//     }
+        stakingToken = new StakingToken("Governance", "GOV", owner);
+        utilityToken = new StakingToken("Utility", "UTIL", owner);
 
-//     function test_Withdraw(uint48 timeJump) public {
+        malGovernanceStaking = new MALGovernanceStaking(address(stakingToken), address(utilityToken), daoMultisig);
 
-//         Init memory init = Init({
-//             user: [alice, bob, makeAddr("shikanoko"), makeAddr("koshitan")],
+        stakingToken.mint(user, STAKE_AMOUNT);
 
-//         });
+        vm.stopPrank();
+    }
 
-//          //TODO:
+    function test_RevertWhen_InsufficientBalance() public {
+        vm.startPrank(user);
+        vm.expectRevert(abi.encodeWithSignature("InsufficientBalance()"));
+        malGovernanceStaking.withdraw(STAKE_AMOUNT);
+        vm.stopPrank();
+    }
 
-//         _test_Withdraw(init, shares, timeJump);
-//     }
+    function test_RevertWhen_CooldownActive() public {
+        vm.startPrank(user);
+        stakingToken.approve(address(malGovernanceStaking), STAKE_AMOUNT);
+        malGovernanceStaking.stake(STAKE_AMOUNT);
 
-//     function testFuzz_Withdraw()
-//        // TODO: add boundInit(init)
+        // withdraw before cooldown expires
+        vm.expectRevert(abi.encodeWithSignature("CooldownActive()"));
+        malGovernanceStaking.withdraw(STAKE_AMOUNT);
+        vm.stopPrank();
+    }
 
-//     }
+    function test_WithdrawFull_UpdatesDelegation() public {
+        vm.startPrank(user);
 
-//     function _test_Withdraw() internal {
+        stakingToken.approve(address(malGovernanceStaking), STAKE_AMOUNT);
+        malGovernanceStaking.stake(STAKE_AMOUNT);
 
-//      //TODO
-//         address owner = init.user[0];
-//         address receiver = init.user[1];
-//         address caller = init.user[2];
+        assertEq(stakingToken.delegates(address(malGovernanceStaking)), user);
 
-//         vm.warp();
+        vm.warp(block.timestamp + COOLDOWN_PERIOD);
 
-//         assertEq(, , "Withdraw should ...");
-//     }
+        malGovernanceStaking.withdraw(STAKE_AMOUNT);
 
-//     function test_RevertWhen_NotExpired() public {
-//         vm.expectRevert(Errors.NotExpired.selector);
-//         vm.warp(expiry - 1);
-//         staker.withdraw(100, alice, alice);
-//     }
+        assertEq(malGovernanceStaking.stakedBalance(user), 0);
+        assertEq(stakingToken.delegates(address(malGovernanceStaking)), address(0));
 
-//     error InsufficientAllowance();
+        vm.stopPrank();
+    }
 
-//     function test_RevertWhen_NotApproved() public {
-//         _approve(staker, alice, bob, 99);
-//         vm.warp(expiry);
+    function test_WithdrawPartial_NoUpdateDelegation() public {
+        vm.startPrank(user);
+        stakingToken.approve(address(malGovernanceStaking), STAKE_AMOUNT);
+        malGovernanceStaking.stake(STAKE_AMOUNT);
 
-//         vm.expectRevert(InsufficientAllowance.selector);
-//         vm.prank(alice);
-//         principalToken.withdraw(100, alice, bob);
-//     }
-// }
+        // Wait for cooldown to expire
+        vm.warp(block.timestamp + COOLDOWN_PERIOD);
+
+        uint256 withdrawAmount = STAKE_AMOUNT / 2;
+        malGovernanceStaking.withdraw(withdrawAmount);
+        assertEq(malGovernanceStaking.stakedBalance(user), STAKE_AMOUNT - withdrawAmount);
+        vm.stopPrank();
+    }
+
+    function test_WithdrawExactlyAtCooldownExpiry() public {
+        vm.startPrank(user);
+        stakingToken.approve(address(malGovernanceStaking), STAKE_AMOUNT);
+        malGovernanceStaking.stake(STAKE_AMOUNT);
+
+        vm.warp(block.timestamp + COOLDOWN_PERIOD);
+
+        malGovernanceStaking.withdraw(STAKE_AMOUNT);
+        assertEq(malGovernanceStaking.stakedBalance(user), 0);
+        vm.stopPrank();
+    }
+
+    function test_WithdrawZero_WithZeroBalance() public {
+        vm.startPrank(user);
+
+        // First stake some tokens
+        stakingToken.approve(address(malGovernanceStaking), STAKE_AMOUNT);
+        malGovernanceStaking.stake(STAKE_AMOUNT);
+
+        // Wait for cooldown to expire
+        vm.warp(block.timestamp + COOLDOWN_PERIOD);
+
+        // Withdraw full amount first
+        malGovernanceStaking.withdraw(STAKE_AMOUNT);
+
+        // Now try withdrawing zero with zero balance
+        malGovernanceStaking.withdraw(0);
+
+        // Verify balance remains zero
+        assertEq(malGovernanceStaking.stakedBalance(user), 0);
+
+        vm.stopPrank();
+    }
+}

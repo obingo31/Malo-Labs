@@ -27,8 +27,6 @@ This document outlines the fundamental truths that must **always hold** for the 
 
 ---
 
-## Security Invariants
-
 ### 5. **Access Control**
 - **What**: Only addresses with `GOVERNANCE_ADMIN_ROLE` or `POLICY_MANAGER_ROLE` may:
   - Update voting period/quorum.

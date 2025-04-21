@@ -22,6 +22,11 @@ contract GovToken is ERC20, ERC20Permit, ERC20Votes {
         super._update(from, to, value);
     }
 
+    /// Combined override for ERC20
+    function approve(address spender, uint256 value) public virtual override returns (bool) {
+        return super.approve(spender, value);
+    }
+
     ///@dev nonces function is used to get the nonce of a given address
     ///@param owner The address of the owner
     // Explicit override for Nonces conflict resolution

@@ -76,7 +76,6 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(POLICY_MANAGER_ROLE, _daoMultisig);
     }
 
-    // Core staking functions
     function stake(
         uint256 amount
     ) external nonReentrant whenNotPaused {
@@ -108,7 +107,6 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         emit Withdrawn(msg.sender, amount);
     }
 
-    // Governance functions
     function createProposal(address target, bytes calldata data) external returns (uint256) {
         if (malGovernanceVotes.getVotes(msg.sender) < proposalThreshold) revert NoVotingPower();
 

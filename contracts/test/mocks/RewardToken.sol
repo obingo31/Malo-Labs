@@ -8,11 +8,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @title RewardToken
  * @notice A minimal ERC20 reward token with mint and burn functionality.
  */
-abstract contract rewardToken is ERC20, Ownable {
+contract RewardToken is ERC20, Ownable {
     /**
      * @notice Constructor that initializes the reward token with its name and symbol.
      */
-    constructor() ERC20("Reward Token", "RWD") {}
+    constructor() ERC20("Reward Token", "RWD") Ownable(msg.sender) {}
 
     /**
      * @notice Mints new tokens to a specified address.
@@ -31,5 +31,27 @@ abstract contract rewardToken is ERC20, Ownable {
         uint256 amount
     ) external {
         _burn(msg.sender, amount);
+    }
+
+    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+        return super.approve(spender, amount);
+    }
+
+    function transfer(address to, uint256 amount) public virtual override returns (bool) {
+        return super.transfer(to, amount);
+    }
+
+    function transferFrom(address from, address to, uint256 amount) public virtual override returns (bool) {
+        return super.transferFrom(from, to, amount);
+    }
+
+    function renounceOwnership() public virtual override onlyOwner {
+        super.renounceOwnership();
+    }
+
+    function transferOwnership(
+        address newOwner
+    ) public virtual override onlyOwner {
+        super.transferOwnership(newOwner);
     }
 }

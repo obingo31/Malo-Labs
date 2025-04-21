@@ -13,32 +13,19 @@ import {AssetManager} from "@recon/AssetManager.sol";
 import {Utils} from "@recon/Utils.sol";
 
 // Your deps
-import "../../src/Gov.sol";
-import "../../src/GovToken.sol";
-import "../InvariantTests/MockVotesToken.sol";
+import "src/GovToken.sol";
+import "src/MALGovernanceStaking.sol";
 
 abstract contract Setup is BaseSetup, ActorManager, AssetManager, Utils {
-    Gov gov;
     GovToken govToken;
-    MockVotesToken mockVotesToken;
-    TimelockController public timelock; // 🚨 Add this line
+    MALGovernanceStaking mALGovernanceStaking;
 
     /// === Setup === ///
-    function setup() internal virtual override {
-        govToken = new GovToken("GovToken", "GTK");
-        // Deploy timelock with Gov as the only proposer
-        address[] memory proposers = new address[](1);
-        proposers[0] = address(gov); // Gov is proposer
-        address[] memory executors = new address[](1);
-        executors[0] = address(0); // Public execution
-        timelock = new TimelockController( // ✅ Now stored as state var
-        1 days, proposers, executors, address(this));
-        //  TimelockController timelock = new TimelockController(1 days, proposers, executors, address(this));
-        // Deploy Gov with secure parameters
-        gov = new Gov(IVotes(address(govToken)), timelock);
-        // Revoke test contract's admin role
-        timelock.grantRole(timelock.DEFAULT_ADMIN_ROLE(), address(0));
-    }
+    /// This contains all calls to be performed in the tester constructor, both for Echidna and Foundry
+    // function setup() internal virtual override {
+    //     govToken = new GovToken(); // TODO: Add parameters here
+    //     mALGovernanceStaking = new MALGovernanceStaking(); // TODO: Add parameters here
+    // }
 
     /// === MODIFIERS === ///
     /// Prank admin and actor

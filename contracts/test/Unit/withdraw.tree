@@ -1,0 +1,13 @@
+WithdrawTest::withdraw
+├── When the amount is greater than the staked balance
+│   └── It should revert with InsufficientBalance
+└── When the amount is less than or equal to the staked balance
+    ├── When the cooldown is still active
+    │   └── It should revert with CooldownActive
+    └── When the cooldown has expired
+        ├── When the amount equals the staked balance
+        │   ├── It should call _updateDelegation and set balance to zero
+        │   └── It should call _updateDelegation even with zero balance
+        └── When the amount is less than the staked balance
+            ├── It should reduce the balance without calling _updateDelegation
+            └── It should process withdrawal exactly when cooldown expires
