@@ -17,9 +17,9 @@ abstract contract Properties is BeforeAfter, Asserts {
     function property_full_withdrawal_resets_voting_power() public view returns (bool) {
         // Skip non-withdrawal operations
         if (currentOperation != OpType.WITHDRAW) return true;
-        
+
         address user = _currentActor();
-        
+
         // Skip partial withdrawals
         if (_after.userStakes[user] != 0) return true;
 
@@ -31,22 +31,21 @@ abstract contract Properties is BeforeAfter, Asserts {
     function invariant_staking_balance_consistency() public {
         uint256 total = malGovernanceStaking.totalStaked();
         uint256 sum = 0;
-        
+
         for (uint256 i = 0; i < actors.length; i++) {
             sum += malGovernanceStaking.stakedBalance(actors[i]);
         }
-        
+
         eq(total, sum, "Total staked mismatch");
     }
 
     /// @dev Proposals should never exceed lifetime without cleanup
     function property_proposal_expiration() public view returns (bool) {
         uint256 count = malGovernanceStaking.proposalCount();
-        
+
         for (uint256 i = 1; i <= count; i++) {
-            (, , , , , uint256 endTime, , bool executed, bool expired) = 
-                malGovernanceStaking.proposals(i);
-            
+            (,,,,, uint256 endTime,, bool executed, bool expired) = malGovernanceStaking.proposals(i);
+
             if (block.timestamp > endTime + malGovernanceStaking.proposalLifetime()) {
                 if (!expired && !executed) return false;
             }

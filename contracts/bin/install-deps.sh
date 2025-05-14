@@ -5,7 +5,7 @@ set -e
 
 # Detect OS and architecture
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-ARCH=$(uname -a | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
 
 # URLs for geth tools
 LINUX_AMD64="https://gethstore.blob.core.windows.net/builds/geth-alltools-linux-amd64-1.14.6-aadddf3a.tar.gz"
@@ -17,17 +17,48 @@ echo "Installing dependencies for OS: $OS, Architecture: $ARCH"
 if [[ "$OS" == "linux" ]]; then
     echo "Installing Linux dependencies..."
     sudo apt-get update
-    sudo apt-get install -y make curl git software-properties-common jq
+    sudo apt-get install -y \
+        make \
+        curl \
+        git \
+        software-properties-common \
+        jq \
+        build-essential \
+        libssl-dev \
+        pkg-config \
+        clang \
+        cmake \
+        librocksdb-dev
 
     # Install geth based on architecture
-    if [[ $ARCH == *"x86_64"* ]]; then
+    if [[ "$ARCH" == "x86_64" ]]; then
         curl -L $LINUX_AMD64 | sudo tar -xz -C /usr/local/bin --strip-components=1
-    elif [[ $ARCH == *"aarch64"* ]]; then
+    elif [[ "$ARCH" == "aarch64" ]]; then
         curl -L $LINUX_ARM64 | sudo tar -xz -C /usr/local/bin --strip-components=1
     else
         echo "Unsupported architecture: $ARCH"
         exit 1
     fi
+
+    # Install Rust
+    echo "Installing Rust..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source "$HOME/.cargo/env"
+    rustup default stable
+    rustup update
+
+    # Install Foundry from source
+    echo "Installing Foundry from source..."
+    cargo install --git https://github.com/foundry-rs/foundry \
+        --profile local \
+        --bins \
+        --locked \
+        --force \
+        foundry-cli anvil chisel
+
+    # Add to PATH
+    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+    source ~/.bashrc
 
 # MacOS installation
 elif [[ "$OS" == "darwin" ]]; then
@@ -39,14 +70,10 @@ else
     exit 1
 fi
 
-# Install Foundry
-echo "Installing Foundry..."
-curl -L https://foundry.paradigm.xyz | bash
-${HOME}/.foundry/bin/foundryup
-
-# Make foundry available system-wide
-echo "Making Foundry available system-wide..."
-sudo cp -R ${HOME}/.foundry/bin/* /usr/local/bin/
+# Verify installation
+echo "Verifying Foundry installation..."
+forge --version || (echo "Forge installation failed"; exit 1)
+cast --version || (echo "Cast installation failed"; exit 1)
 
 # Install project dependencies
 echo "Installing project dependencies..."

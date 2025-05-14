@@ -25,4 +25,3 @@ contract DeployScript is Script {
         return stakingtoken;
     }
 }
-

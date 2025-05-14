@@ -41,14 +41,14 @@ echidna:
 		--corpus-dir $(CORPUS_DIR)
 
 echidna-assert:
-	echidna ./test/echidna/Setup.t.sol \
+	echidna ./test/echidna/Setup.sol \
 		--contract Setup \
 		--test-mode assertion \
 		--config $(ECHIDNA_CONFIG) \
 		--corpus-dir $(CORPUS_DIR)
 
 echidna-explore:
-	echidna ./test/echidna/Setup.t.sol \
+	echidna ./test/echidna/Setup.sol \
 		--contract Setup \
 		--test-mode exploration \
 		--config $(ECHIDNA_CONFIG) \

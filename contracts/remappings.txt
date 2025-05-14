@@ -13,5 +13,6 @@ halmos-cheatcodes/=lib/halmos-cheatcodes/src/
 @recon/=lib/setup-helpers/src/
 @recon/=lib/setup-helpers/src/
 @recon/=lib/setup-helpers/src/
+@recon/=lib/setup-helpers/src/
 @chimera/=lib/chimera/src/
 @recon/=lib/setup-helpers/src/

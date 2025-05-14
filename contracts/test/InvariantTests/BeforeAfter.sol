@@ -93,17 +93,8 @@ abstract contract BeforeAfter is Setup {
                 bool expired
             ) = staking.proposals(_before.proposalCount);
 
-            _before.proposals[_before.proposalCount] = Proposal(
-                target,
-                data,
-                proposer,
-                forVotes,
-                againstVotes,
-                startTime,
-                endTime,
-                executed,
-                expired
-            );
+            _before.proposals[_before.proposalCount] =
+                Proposal(target, data, proposer, forVotes, againstVotes, startTime, endTime, executed, expired);
         }
     }
 
@@ -138,17 +129,8 @@ abstract contract BeforeAfter is Setup {
                 bool expired
             ) = staking.proposals(_after.proposalCount);
 
-            _after.proposals[_after.proposalCount] = Proposal(
-                target,
-                data,
-                proposer,
-                forVotes,
-                againstVotes,
-                startTime,
-                endTime,
-                executed,
-                expired
-            );
+            _after.proposals[_after.proposalCount] =
+                Proposal(target, data, proposer, forVotes, againstVotes, startTime, endTime, executed, expired);
         }
     }
 }

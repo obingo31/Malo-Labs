@@ -74,7 +74,9 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         _grantRole(POLICY_MANAGER_ROLE, _daoMultisig);
     }
 
-    modifier updateReward(address account) {
+    modifier updateReward(
+        address account
+    ) {
         rewardPerTokenStored = rewardPerToken();
         lastUpdateTime = block.timestamp;
         if (account != address(0)) {
@@ -86,17 +88,19 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
 
     function rewardPerToken() public view returns (uint256) {
         if (_totalStaked == 0) return rewardPerTokenStored;
-        return rewardPerTokenStored + (
-            (block.timestamp - lastUpdateTime) * rewardRate * 1e18 / _totalStaked
-        );
+        return rewardPerTokenStored + ((block.timestamp - lastUpdateTime) * rewardRate * 1e18 / _totalStaked);
     }
 
-    function earned(address account) public view returns (uint256) {
-        return (_stakedBalances[account] * 
-            (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18 + rewards[account];
+    function earned(
+        address account
+    ) public view returns (uint256) {
+        return
+            (_stakedBalances[account] * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18 + rewards[account];
     }
 
-    function stake(uint256 amount) external nonReentrant whenNotPaused updateReward(msg.sender) {
+    function stake(
+        uint256 amount
+    ) external nonReentrant whenNotPaused updateReward(msg.sender) {
         if (amount == 0) revert InsufficientBalance();
 
         _totalStaked += amount;
@@ -106,7 +110,9 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         emit Staked(msg.sender, amount);
     }
 
-    function withdraw(uint256 amount) external nonReentrant updateReward(msg.sender) {
+    function withdraw(
+        uint256 amount
+    ) external nonReentrant updateReward(msg.sender) {
         if (amount > _stakedBalances[msg.sender]) revert InsufficientBalance();
         if (block.timestamp < lastStakeTime[msg.sender] + withdrawalCooldown) revert CooldownActive();
 
@@ -145,7 +151,7 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         if (_stakedBalances[msg.sender] == 0) revert NoVotingPower();
 
         uint256 power = _stakedBalances[msg.sender];
-        
+
         if (support) {
             proposal.forVotes += power;
         } else {
@@ -156,7 +162,9 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         emit Voted(proposalId, msg.sender, support, power);
     }
 
-    function executeProposal(uint256 proposalId) external nonReentrant {
+    function executeProposal(
+        uint256 proposalId
+    ) external nonReentrant {
         Proposal storage proposal = proposals[proposalId];
         if (proposal.executed) revert ProposalAlreadyExecuted();
         if (block.timestamp <= proposal.endTime) revert VotingClosed();
@@ -179,7 +187,9 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         emit RewardsClaimed(msg.sender, reward);
     }
 
-    function setRewardRate(uint256 newRate) external onlyRole(GOVERNANCE_ADMIN_ROLE) updateReward(address(0)) {
+    function setRewardRate(
+        uint256 newRate
+    ) external onlyRole(GOVERNANCE_ADMIN_ROLE) updateReward(address(0)) {
         rewardRate = newRate;
         emit GovernanceUpdated("rewardRate", newRate);
     }
@@ -192,23 +202,31 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         }
     }
 
-    function updateVotingPeriod(uint256 newPeriod) external onlyRole(POLICY_MANAGER_ROLE) {
+    function updateVotingPeriod(
+        uint256 newPeriod
+    ) external onlyRole(POLICY_MANAGER_ROLE) {
         votingPeriod = newPeriod;
         emit GovernanceUpdated("votingPeriod", newPeriod);
     }
 
-    function updateQuorum(uint256 newPercentage) external onlyRole(GOVERNANCE_ADMIN_ROLE) {
+    function updateQuorum(
+        uint256 newPercentage
+    ) external onlyRole(GOVERNANCE_ADMIN_ROLE) {
         if (newPercentage > 100 || newPercentage < 1) revert InvalidPercentage();
         quorumPercentage = newPercentage;
         emit GovernanceUpdated("quorumPercentage", newPercentage);
     }
 
-    function setWithdrawalCooldown(uint256 newCooldown) external onlyRole(GOVERNANCE_ADMIN_ROLE) {
+    function setWithdrawalCooldown(
+        uint256 newCooldown
+    ) external onlyRole(GOVERNANCE_ADMIN_ROLE) {
         withdrawalCooldown = newCooldown;
         emit GovernanceUpdated("withdrawalCooldown", newCooldown);
     }
 
-    function getVotingPower(address citizen) external view returns (uint256) {
+    function getVotingPower(
+        address citizen
+    ) external view returns (uint256) {
         return _stakedBalances[citizen];
     }
 
@@ -216,7 +234,9 @@ contract MALGovernanceStaking is AccessControl, ReentrancyGuard, Pausable {
         return _totalStaked;
     }
 
-    function stakedBalance(address user) external view returns (uint256) {
+    function stakedBalance(
+        address user
+    ) external view returns (uint256) {
         return _stakedBalances[user];
     }
 
