@@ -15,7 +15,7 @@
 	url = https://github.com/crytic/properties
 [submodule "contracts/lib/chimera"]
 	path = contracts/lib/chimera
-	url = https://github.com/Recon-Fuzz/chimera
+	url = https://github.com/recon-fuzz/chimera
 [submodule "contracts/lib/openzeppelin-contracts"]
 	path = contracts/lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
@@ -30,7 +30,7 @@
 	url = https://github.com/dapphub/ds-test
 [submodule "contracts/lib/setup-helpers"]
 	path = contracts/lib/setup-helpers
-	url = https://github.com/Recon-Fuzz/setup-helpers
+	url = https://github.com/recon-fuzz/setup-helpers
 [submodule "contracts/lib/openzeppelin-contracts-upgradeable"]
 	path = contracts/lib/openzeppelin-contracts-upgradeable
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
