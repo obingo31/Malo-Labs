@@ -1,82 +1,96 @@
 #!/usr/bin/env bash
 
-# Exit on error
-set -e
+set -eo pipefail
 
-# Detect OS and architecture
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Detect environment
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-ARCH=$(uname -m | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m)
 
-# URLs for geth tools
-LINUX_AMD64="https://gethstore.blob.core.windows.net/builds/geth-alltools-linux-amd64-1.14.6-aadddf3a.tar.gz"
-LINUX_ARM64="https://gethstore.blob.core.windows.net/builds/geth-alltools-linux-arm64-1.14.5-0dd173a7.tar.gz"
+# Geth download URLs
+declare -A GETH_URLS=(
+    ["linux-x86_64"]="https://gethstore.blob.core.windows.net/builds/geth-alltools-linux-amd64-1.14.6-aadddf3a.tar.gz"
+    ["linux-aarch64"]="https://gethstore.blob.core.windows.net/builds/geth-alltools-linux-arm64-1.14.5-0dd173a7.tar.gz"
+    ["darwin-x86_64"]="https://gethstore.blob.core.windows.net/builds/geth-alltools-darwin-amd64-1.14.6-aadddf3a.tar.gz"
+    ["darwin-arm64"]="https://gethstore.blob.core.windows.net/builds/geth-alltools-darwin-arm64-1.14.6-aadddf3a.tar.gz"
+)
 
-echo "Installing dependencies for OS: $OS, Architecture: $ARCH"
+install_linux() {
+    echo -e "${YELLOW}Installing Linux dependencies...${NC}"
+    sudo apt-get update -qq
+    sudo apt-get install -y --no-install-recommends \
+        make curl git software-properties-common \
+        jq build-essential libssl-dev pkg-config \
+        clang cmake librocksdb-dev > /dev/null
 
-# Linux installation
-if [[ "$OS" == "linux" ]]; then
-    echo "Installing Linux dependencies..."
-    sudo apt-get update
-    sudo apt-get install -y \
-        make \
-        curl \
-        git \
-        software-properties-common \
-        jq \
-        build-essential \
-        libssl-dev \
-        pkg-config \
-        clang \
-        cmake \
-        librocksdb-dev
+    install_geth
+}
 
-    # Install geth based on architecture
-    if [[ "$ARCH" == "x86_64" ]]; then
-        curl -L $LINUX_AMD64 | sudo tar -xz -C /usr/local/bin --strip-components=1
-    elif [[ "$ARCH" == "aarch64" ]]; then
-        curl -L $LINUX_ARM64 | sudo tar -xz -C /usr/local/bin --strip-components=1
-    else
-        echo "Unsupported architecture: $ARCH"
-        exit 1
+install_macos() {
+    echo -e "${YELLOW}Installing macOS dependencies...${NC}"
+    if ! command -v brew >/dev/null; then
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    fi
+    
+    brew update
+    brew install libusb ethereum
+}
+
+install_geth() {
+    local key="$OS-$ARCH"
+    local url=${GETH_URLS[$key]}
+    
+    if [ -z "$url" ]; then
+        echo -e "${RED}Unsupported architecture: $ARCH${NC}"
+        return 1
     fi
 
-    # Install Rust
-    echo "Installing Rust..."
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    source "$HOME/.cargo/env"
+    echo -e "${YELLOW}Installing Geth...${NC}"
+    curl -sL "$url" | sudo tar -xz -C /usr/local/bin --strip-components=1
+}
+
+install_rust() {
+    if ! command -v rustup >/dev/null; then
+        echo -e "${YELLOW}Installing Rust...${NC}"
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source "$HOME/.cargo/env"
+    fi
+    
     rustup default stable
     rustup update
+}
 
-    # Install Foundry from source
-    echo "Installing Foundry from source..."
+install_foundry() {
+    echo -e "${YELLOW}Installing Foundry...${NC}"
     cargo install --git https://github.com/foundry-rs/foundry \
         --profile local \
         --bins \
         --locked \
-        --force \
         foundry-cli anvil chisel
+}
 
-    # Add to PATH
-    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
-    source ~/.bashrc
+main() {
+    echo -e "${GREEN}Starting installation for $OS-$ARCH...${NC}"
+    
+    case "$OS" in
+        linux*) install_linux ;;
+        darwin*) install_macos ;;
+        *) echo -e "${RED}Unsupported OS: $OS${NC}"; exit 1 ;;
+    esac
 
-# MacOS installation
-elif [[ "$OS" == "darwin" ]]; then
-    echo "Installing MacOS dependencies..."
-    brew tap ethereum/ethereum
-    brew install libusb ethereum@1.14.5
-else
-    echo "Unsupported OS: $OS"
-    exit 1
-fi
+    install_rust
+    install_foundry
+    
+    echo -e "${GREEN}Installation complete!${NC}"
+    echo "Please restart your shell or run:"
+    echo "source ~/.bashrc"
+}
 
-# Verify installation
-echo "Verifying Foundry installation..."
-forge --version || (echo "Forge installation failed"; exit 1)
-cast --version || (echo "Cast installation failed"; exit 1)
-
-# Install project dependencies
-echo "Installing project dependencies..."
-forge install
-
-echo "Installation complete!"
+main "$@"
