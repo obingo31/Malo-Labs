@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-
 set -eo pipefail
 
-# Colors
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -12,85 +11,140 @@ NC='\033[0m'
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
 
-# Geth download URLs
-declare -A GETH_URLS=(
-    ["linux-x86_64"]="https://gethstore.blob.core.windows.net/builds/geth-alltools-linux-amd64-1.14.6-aadddf3a.tar.gz"
-    ["linux-aarch64"]="https://gethstore.blob.core.windows.net/builds/geth-alltools-linux-arm64-1.14.5-0dd173a7.tar.gz"
-    ["darwin-x86_64"]="https://gethstore.blob.core.windows.net/builds/geth-alltools-darwin-amd64-1.14.6-aadddf3a.tar.gz"
-    ["darwin-arm64"]="https://gethstore.blob.core.windows.net/builds/geth-alltools-darwin-arm64-1.14.6-aadddf3a.tar.gz"
-)
-
-install_linux() {
-    echo -e "${YELLOW}Installing Linux dependencies...${NC}"
-    sudo apt-get update -qq
-    sudo apt-get install -y --no-install-recommends \
-        make curl git software-properties-common \
-        jq build-essential libssl-dev pkg-config \
-        clang cmake librocksdb-dev > /dev/null
-
-    install_geth
-}
-
-install_macos() {
-    echo -e "${YELLOW}Installing macOS dependencies...${NC}"
+# Function: Ensure Homebrew is installed
+ensure_brew() {
     if ! command -v brew >/dev/null; then
+        echo -e "${YELLOW}Homebrew not found. Installing Homebrew...${NC}"
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
-        eval "$(/opt/homebrew/bin/brew shellenv)"
+        if [ "$OS" = "linux" ]; then
+            echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> "$HOME/.bashrc"
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+        elif [ "$OS" = "darwin" ]; then
+            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$HOME/.bash_profile"
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        fi
+    else
+        echo -e "${GREEN}Homebrew is installed.${NC}"
     fi
-    
-    brew update
-    brew install libusb ethereum
 }
 
-install_geth() {
-    local key="$OS-$ARCH"
-    local url=${GETH_URLS[$key]}
+install_echidna() {
+    echo -e "${YELLOW}Installing Echidna...${NC}"
     
-    if [ -z "$url" ]; then
-        echo -e "${RED}Unsupported architecture: $ARCH${NC}"
-        return 1
+    # Try to use brew if available (or attempt to install it)
+    ensure_brew
+    if command -v brew >/dev/null; then
+        echo -e "${YELLOW}Installing Echidna using Homebrew...${NC}"
+        brew update && brew install echidna
+    else
+        # Fallback: manual installation if brew is still not available.
+        local tmp_dir
+        tmp_dir=$(mktemp -d)
+        cd "$tmp_dir"
+        
+        echo "Downloading Echidna..."
+        curl -L https://github.com/crytic/echidna/releases/download/v2.2.1/echidna-2.2.1-Linux.zip -o echidna.zip
+        unzip echidna.zip
+        
+        # Extract the tarball contained in the ZIP
+        tar -xzf echidna.tar.gz
+        
+        if [ ! -f echidna ]; then
+            echo -e "${RED}Error: Echidna binary not found after extracting tarball.${NC}"
+            exit 1
+        fi
+        
+        mkdir -p "$HOME/.local/bin"
+        mv echidna "$HOME/.local/bin/"
+        chmod +x "$HOME/.local/bin/echidna"
+        
+        if ! grep -q "$HOME/.local/bin" "$HOME/.bashrc"; then
+            echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+        fi
+        
+        cd - > /dev/null
+        rm -rf "$tmp_dir"
+        export PATH="$HOME/.local/bin:$PATH"
     fi
 
-    echo -e "${YELLOW}Installing Geth...${NC}"
-    curl -sL "$url" | sudo tar -xz -C /usr/local/bin --strip-components=1
+    echo -e "${GREEN}Echidna installation completed!${NC}"
+    if command -v echidna >/dev/null; then
+        echo -e "${GREEN}Echidna installation verified!${NC}"
+        echidna --version
+    else
+        echo -e "${RED}Echidna installation failed - not in PATH${NC}"
+        echo "Current PATH: $PATH"
+    fi
 }
 
-install_rust() {
-    if ! command -v rustup >/dev/null; then
-        echo -e "${YELLOW}Installing Rust...${NC}"
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        source "$HOME/.cargo/env"
-    fi
+install_medusa() {
+    echo -e "${YELLOW}Installing Medusa...${NC}"
     
-    rustup default stable
-    rustup update
+    # Try to use brew if available (or attempt to install it)
+    ensure_brew
+    if command -v brew >/dev/null; then
+        echo -e "${YELLOW}Installing Medusa using Homebrew...${NC}"
+        brew update && brew install medusa
+    else
+        # Fallback: use Cargo installation
+        if ! command -v rustup >/dev/null; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            source "$HOME/.cargo/env"
+        fi
+        cargo install medusa --locked
+    fi
+
+    if command -v medusa >/dev/null; then
+        echo -e "${GREEN}Medusa installation verified!${NC}"
+        medusa --version
+    else
+        echo -e "${RED}Medusa not found in PATH. You may need to add ~/.cargo/bin to your PATH.${NC}"
+        echo "Try running: source \$HOME/.cargo/env"
+        if ! grep -q ".cargo/env" "$HOME/.bashrc"; then
+            echo 'source "$HOME/.cargo/env"' >> "$HOME/.bashrc"
+        fi
+    fi
 }
 
 install_foundry() {
     echo -e "${YELLOW}Installing Foundry...${NC}"
-    cargo install --git https://github.com/foundry-rs/foundry \
-        --profile local \
-        --bins \
-        --locked \
-        foundry-cli anvil chisel
+    
+    # Use foundryup for Foundry installation
+    curl -L https://foundry.paradigm.xyz | bash
+    source "$HOME/.bashrc"
+    "$HOME/.foundry/bin/foundryup"
+    
+    if command -v forge >/dev/null; then
+        echo -e "${GREEN}Foundry installation verified!${NC}"
+        forge --version
+    else
+        echo -e "${RED}Foundry not found in PATH.${NC}"
+        echo "Try running: source ~/.bashrc"
+    fi
+}
+
+install_dependencies() {
+    echo -e "${YELLOW}Installing system dependencies...${NC}"
+    sudo apt-get update -qq
+    sudo apt-get install -y --no-install-recommends \
+        make curl git software-properties-common \
+        jq build-essential libssl-dev pkg-config \
+        clang cmake zip unzip > /dev/null
+    echo -e "${GREEN}System dependencies installed!${NC}"
 }
 
 main() {
-    echo -e "${GREEN}Starting installation for $OS-$ARCH...${NC}"
+    echo -e "${GREEN}Starting installation...${NC}"
     
-    case "$OS" in
-        linux*) install_linux ;;
-        darwin*) install_macos ;;
-        *) echo -e "${RED}Unsupported OS: $OS${NC}"; exit 1 ;;
-    esac
-
-    install_rust
+    install_dependencies
+    install_echidna
+    install_medusa
     install_foundry
     
     echo -e "${GREEN}Installation complete!${NC}"
     echo "Please restart your shell or run:"
     echo "source ~/.bashrc"
+    echo "source ~/.cargo/env"
 }
 
 main "$@"
