@@ -15,6 +15,56 @@ import "../../../src/Staking.sol";
 abstract contract StakingTargets is BaseTargetFunctions, Properties {
     /// CUSTOM TARGET FUNCTIONS - Add your own target functions here ///
 
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*               HANDLER-SPECIFIC POST CONDITIONS             */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
+    function assert_STAKE_HSPOST_A(
+        uint256 amount
+    ) internal {
+        eq(_after.balance_actor, _before.balance_actor + amount, STAKE_HSPOST_A);
+        eq(_after.totalStaked, _before.totalStaked + amount, STAKE_HSPOST_A);
+    }
+
+    // Add a constant error message for unstake postconditions
+    // string constant STAKE_HSPOST_C = "Unstake postcondition failed";
+
+    // HSPOST C: Validate unstake decreases balance and totalStaked
+    function assert_STAKE_HSPOST_C(
+        uint256 amount
+    ) internal {
+        eq(_after.balance_actor, _before.balance_actor - amount, STAKE_HSPOST_C);
+        eq(_after.totalStaked, _before.totalStaked - amount, STAKE_HSPOST_C);
+    }
+
+    // Clamped stake handler
+    function staking_stake_clamped(
+        uint256 amount
+    ) public asActor {
+        // Clamp amount to non-zero and reasonable range
+        amount = between(amount, 1, type(uint128).max);
+
+        // Call unclamped handler
+        staking_stake(amount);
+
+        // Validate HSPOST: balance and totalStaked increase by amount
+        assert_STAKE_HSPOST_A(amount);
+    }
+
+    // Clamped unstake handler
+    function staking_unstake_clamped(
+        uint256 amount
+    ) public asActor {
+        // Clamp amount to non-zero and within actor's unlocked balance
+        amount = between(amount, 1, staking.unlockedBalanceOf(_getActor()));
+
+        // Call unclamped handler
+        staking_unstake(amount);
+
+        // Validate HSPOST: balance and totalStaked decrease by amount
+        assert_STAKE_HSPOST_C(amount);
+    }
+
     /// AUTO GENERATED TARGET FUNCTIONS - WARNING: DO NOT DELETE OR MODIFY THIS LINE ///
 
     function staking_allowManager(address _lockManager, uint256 _allowance, bytes memory _data) public asActor {

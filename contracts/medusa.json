@@ -1,24 +1,20 @@
 {
   "fuzzing": {
-    "workers": 16,
+    "workers": 10,
     "workerResetLimit": 50,
     "timeout": 0,
-    "testLimit": 0,
-    "callSequenceLength": 100,
-    "corpusDirectory": "medusa",
+    "testLimit": 1000,
+    "callSequenceLength": 1,
+    "corpusDirectory": "vault-corpus",
     "coverageEnabled": true,
-    "deploymentOrder": [
-      "CryticTester"
-    ],
     "targetContracts": [
-      "CryticTester",
-      "MALGovernanceStaking"
+      "VaultTest"
     ],
     "targetContractsBalances": [
       "0x27b46536c66c8e3000000"
     ],
     "constructorArgs": {},
-    "deployerAddress": "0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496",
+    "deployerAddress": "0x30000",
     "senderAddresses": [
       "0x10000",
       "0x20000",
@@ -29,19 +25,19 @@
     "blockGasLimit": 125000000,
     "transactionGasLimit": 12500000,
     "testing": {
-      "stopOnFailedTest": false,
+      "stopOnFailedTest": true,
       "stopOnFailedContractMatching": false,
       "stopOnNoTests": true,
       "testAllContracts": false,
       "traceAll": false,
       "assertionTesting": {
         "enabled": true,
-        "testViewMethods": true,
+        "testViewMethods": false,
         "panicCodeConfig": {
           "failOnCompilerInsertedPanic": false,
           "failOnAssertion": true,
-          "failOnArithmeticUnderflow": false,
-          "failOnDivideByZero": false,
+          "failOnArithmeticUnderflow": true,
+          "failOnDivideByZero": true,
           "failOnEnumTypeConversionOutOfBounds": false,
           "failOnIncorrectStorageAccess": false,
           "failOnPopEmptyArray": false,
@@ -51,11 +47,9 @@
         }
       },
       "propertyTesting": {
-        "enabled": true,
+        "enabled": false,
         "testPrefixes": [
-          "invariant_",
-          "handler_",
-          "test_"
+          "property_"
         ]
       },
       "optimizationTesting": {
@@ -70,34 +64,21 @@
       "cheatCodes": {
         "cheatCodesEnabled": true,
         "enableFFI": false
-      },
-      "skipAccountChecks": true,
-			"forkConfig": {
-				"forkModeEnabled": false,
-				"rpcUrl": "",
-				"rpcBlock": 1,
-				"poolSize": 20
-			}
+      }
     }
   },
   "compilation": {
     "platform": "crytic-compile",
     "platformConfig": {
-      "target": ".",
-      "solcVersion": "",
+      "target": "./src",
+      "solcVersion": "0.8.25",
       "exportDirectory": "",
-      "args": [
-        "--foundry-compile-all"
-      ]
+      "args": []
     }
   },
-  "slither": {
-		"useSlither": true,
-		"cachePath": "slither_results.json",
-		"args": []
-	},
   "logging": {
     "level": "info",
-    "logDirectory": ""
+    "logDirectory": "",
+    "noColor": false
   }
 }

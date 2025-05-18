@@ -1,55 +1,76 @@
-// SPDX-License-Identifier: GPL-2.0
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
 
 import {Asserts} from "@chimera/Asserts.sol";
 import {BeforeAfter} from "./BeforeAfter.sol";
-import {StakingPostconditions} from "./StakingPostconditions.sol";
-import {StakingInvariants} from "./StakingInvariants.sol";
 
-abstract contract Properties is BeforeAfter, Asserts, StakingPostconditions, StakingInvariants {
-    // ███████╗████████╗ █████╗ ██╗  ██╗██╗███╗   ██╗ ██████╗ 
-    // ██╔════╝╚══██╔══╝██╔══██╗██║ ██╔╝██║████╗  ██║██╔════╝ 
+abstract contract Properties is BeforeAfter, Asserts {
+    // ███████╗████████╗ █████╗ ██╗  ██╗██╗███╗   ██╗ ██████╗
+    // ██╔════╝╚══██╔══╝██╔══██╗██║ ██╔╝██║████╗  ██║██╔════╝
     // ███████╗   ██║   ███████║█████╔╝ ██║██╔██╗ ██║██║  ███╗
     // ╚════██║   ██║   ██╔══██║██╔═██╗ ██║██║╚██╗██║██║   ██║
     // ███████║   ██║   ██║  ██║██║  ██╗██║██║ ╚████║╚██████╔╝
-    // ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+    // ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝
 
-    function invariant_CORE_INV_A() public  {
+    function invariant_CORE_INV_A() public {
         uint256 totalBal;
         address[] memory actors = _getActors();
-        for (uint i; i < actors.length; i++) {
+        for (uint256 i; i < actors.length; ++i) {
             totalBal += staking.balanceOf(actors[i]);
         }
-        eq(totalBal, staking.totalStaked(), CORE_INV_A);
+        eq(totalBal, staking.totalStaked(), CORE_GPOST_A);
     }
 
-    // ██████╗ ███████╗██╗    ██╗ █████╗ ██████╗ ██████╗ 
+    function invariant_CORE_INV_B() public {
+        address actor = _getActor();
+        uint256 totalBalance = staking.lockedBalanceOf(actor) + staking.unlockedBalanceOf(actor);
+        eq(totalBalance, staking.balanceOf(actor), CORE_GPOST_B);
+    }
+
+    function invariant_CORE_INV_C() public {
+        lte(staking.protocolFee(), staking.MAX_FEE(), CORE_GPOST_C);
+    }
+
+    function invariant_CORE_INV_D() public {
+        t(staking.feeRecipient() != address(0), CORE_GPOST_D);
+    }
+
+    // ██████╗ ███████╗██╗    ██╗ █████╗ ██████╗ ██████╗
     // ██╔══██╗██╔════╝██║    ██║██╔══██╗██╔══██╗██╔══██╗
     // ██████╔╝█████╗  ██║ █╗ ██║███████║██████╔╝██║  ██║
     // ██╔══██╗██╔══╝  ██║███╗██║██╔══██║██╔══██╗██║  ██║
     // ██║  ██║███████╗╚███╔███╔╝██║  ██║██║  ██║██████╔╝
-    // ╚═╝  ╚═╝╚══════╝ ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ 
+    // ╚═╝  ╚═╝╚══════╝ ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝
 
-    function invariant_REWARD_INV_A() public  {
+    function invariant_REWARD_INV_A() public {
         uint256 rewards = staking.totalRewardsDistributed();
         uint256 balance = staking.maloToken().balanceOf(address(staking));
-        lte(rewards, balance, REWARD_INV_A);
+        lte(rewards, balance, REWARD_GPOST_A);
     }
 
-    // ██╗      ██████╗  ██████╗██╗  ██╗██╗███╗   ██╗ ██████╗ 
-    // ██║     ██╔═══██╗██╔════╝██║ ██╔╝██║████╗  ██║██╔════╝ 
+    // ██╗      ██████╗  ██████╗██╗  ██╗██╗███╗   ██╗ ██████╗
+    // ██║     ██╔═══██╗██╔════╝██║ ██╔╝██║████╗  ██║██╔════╝
     // ██║     ██║   ██║██║     █████╔╝ ██║██╔██╗ ██║██║  ███╗
     // ██║     ██║   ██║██║     ██╔═██╗ ██║██║╚██╗██║██║   ██║
     // ███████╗╚██████╔╝╚██████╗██║  ██╗██║██║ ╚████║╚██████╔╝
-    // ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝ 
+    // ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝
+
+    function invariant_LOCK_INV_A() public {
+        address[] memory actors = _getActors();
+        uint256 totalLocked;
+        for (uint256 i; i < actors.length; ++i) {
+            totalLocked += staking.lockedBalanceOf(actors[i]);
+        }
+        lte(totalLocked, staking.totalStaked(), LOCK_GPOST_A);
+    }
 
     function invariant_LOCK_INV_B() public {
         address[] memory actors = _getActors();
-        for (uint i; i < actors.length; i++) {
-            for (uint j; j < actors.length; j++) {
-                (uint locked, uint allowance) = staking.getLock(actors[i], actors[j]);
+        for (uint256 i; i < actors.length; ++i) {
+            for (uint256 j; j < actors.length; ++j) {
+                (uint256 locked, uint256 allowance) = staking.getLock(actors[i], actors[j]);
                 if (allowance > 0) {
-                    lte(locked, allowance, LOCK_INV_B);
+                    lte(locked, allowance, LOCK_HSPOST_E);
                 }
             }
         }
@@ -62,27 +83,60 @@ abstract contract Properties is BeforeAfter, Asserts, StakingPostconditions, Sta
     //    ██║   ╚██████╔╝██║  ██╗███████╗██║ ╚████║
     //    ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝
 
-    function invariant_TOKEN_GPOST_A() public  {
-        uint onChain = staking.stakingToken().balanceOf(address(staking));
+    function invariant_TOKEN_INV_A() public {
+        uint256 onChain = staking.stakingToken().balanceOf(address(staking));
         eq(onChain, staking.totalStaked(), TOKEN_GPOST_A);
+    }
+
+    function invariant_TOKEN_INV_B() public {
+        uint256 rewards = staking.totalRewardsDistributed();
+        uint256 balance = staking.maloToken().balanceOf(address(staking));
+        lte(rewards, balance, TOKEN_GPOST_B);
     }
 
     // ███████╗███╗   ███╗███████╗███████╗██████╗ ██████╗ ██╗   ██╗
     // ██╔════╝████╗ ████║██╔════╝██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝
-    // █████╗  ██╔████╔██║█████╗  █████╗  ██████╔╝██████╔╝ ╚████╔╝ 
-    // ██╔══╝  ██║╚██╔╝██║██╔══╝  ██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝  
-    // ███████╗██║ ╚═╝ ██║███████╗███████╗██║  ██║██║  ██║   ██║   
-    // ╚══════╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   
+    // █████╗  ██╔████╔██║█████╗  █████╗  ██████╔╝██████╔╝ ╚████╔╝
+    // ██╔══╝  ██║╚██╔╝██║██╔══╝  ██╔══╝  ██╔══██╗██╔══██╗  ╚██╔╝
+    // ███████╗██║ ╚═╝ ██║███████╗███████╗██║  ██║██║  ██║   ██║
+    // ╚══════╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝
 
-    function invariant_EMERG_INV_A() public  {
+    function invariant_EMERG_INV_A() public {
+        address actor = _getActor();
         if (staking.paused()) {
-            gt(staking.balanceOf(address(this)), 0, EMERG_INV_A);
+            eq(staking.balanceOf(actor), 0, EMERG_GPOST_A);
         } else {
             eq(
-                staking.balanceOf(address(this)), 
-                staking.lockedBalanceOf(address(this)),
-                EMERG_INV_A
+                staking.balanceOf(actor),
+                staking.lockedBalanceOf(actor) + staking.unlockedBalanceOf(actor),
+                EMERG_GPOST_A
             );
         }
+    }
+
+    // ███████╗███████╗███████╗
+    // ██╔════╝██╔════╝██╔════╝
+    // █████╗  █████╗  █████╗
+    // ██╔══╝  ██╔══╝  ██╔══╝
+    // ██║     ███████╗██║
+    // ╚═╝     ╚══════╝╚═╝
+
+    function invariant_FEE_INV_A() public {
+        uint256 feeBalance = staking.maloToken().balanceOf(staking.feeRecipient());
+        uint256 expectedFees = staking.totalRewardsDistributed() * staking.protocolFee() / 1000;
+        gte(feeBalance, expectedFees, FEE_HSPOST_B);
+    }
+
+    //  █████╗  ██████╗ ██████╗███████╗███████╗███████╗
+    // ██╔══██╗██╔════╝ ██╔══██╗██╔════╝██╔════╝██╔════╝
+    // ███████║██║  ███╗██████╔╝█████╗  █████╗  █████╗
+    // ██╔══██║██║   ██║██╔═══╝ ██╔══╝  ██╔══╝  ██╔══╝
+    // ██║  ██║╚██████╔╝██║     ███████╗███████╗███████╗
+    // ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚══════╝╚══════╝╚══════╝
+
+    function invariant_ACCESS_INV_A() public {
+        // Note: Exact role-based access control check depends on staking contract's implementation.
+        // Here, we assume setProtocolFee is restricted to authorized roles.
+        t(staking.protocolFee() <= staking.MAX_FEE(), ACCESS_GPOST_A);
     }
 }

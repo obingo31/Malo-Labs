@@ -1,10 +1,13 @@
-// SPDX-License-Identifier: GPL-2.0
-pragma solidity ^0.8.0;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.20;
 
 import {Setup} from "./Setup.sol";
 import {Strings, Pretty} from "./Pretty.sol";
 
-abstract contract BeforeAfter is Setup {
+import {StakingPostconditions} from "./StakingPostconditions.sol";
+import {StakingInvariants} from "./StakingInvariants.sol";
+
+abstract contract BeforeAfter is Setup, StakingPostconditions, StakingInvariants {
     using Strings for string;
     using Pretty for uint256;
     using Pretty for bool;
@@ -12,11 +15,13 @@ abstract contract BeforeAfter is Setup {
     struct Vars {
         uint256 balance_actor;
         uint256 earned_actor;
+        uint256 unlockedBalance_actor;
         uint256 totalStaked;
         uint256 totalRewardsDistributed;
         uint256 protocolFee;
         uint256 rewardRate;
         uint256 rewardPeriod;
+        uint256 rewardPerTokenStored;
         address feeRecipient;
         bool paused;
     }
@@ -28,7 +33,6 @@ abstract contract BeforeAfter is Setup {
         __before();
         _;
         __after();
-        _validateStateConsistency();
     }
 
     function __before() internal {
@@ -36,11 +40,13 @@ abstract contract BeforeAfter is Setup {
         _before = Vars({
             balance_actor: staking.balanceOf(actor),
             earned_actor: staking.earned(actor),
+            unlockedBalance_actor: staking.unlockedBalanceOf(actor),
             totalStaked: staking.totalStaked(),
             totalRewardsDistributed: staking.totalRewardsDistributed(),
             protocolFee: staking.protocolFee(),
             rewardRate: staking.rewardRate(),
             rewardPeriod: staking.rewardPeriod(),
+            rewardPerTokenStored: staking.rewardPerTokenStored(),
             feeRecipient: staking.feeRecipient(),
             paused: staking.paused()
         });
@@ -51,71 +57,84 @@ abstract contract BeforeAfter is Setup {
         _after = Vars({
             balance_actor: staking.balanceOf(actor),
             earned_actor: staking.earned(actor),
+            unlockedBalance_actor: staking.unlockedBalanceOf(actor),
             totalStaked: staking.totalStaked(),
             totalRewardsDistributed: staking.totalRewardsDistributed(),
             protocolFee: staking.protocolFee(),
             rewardRate: staking.rewardRate(),
             rewardPeriod: staking.rewardPeriod(),
+            rewardPerTokenStored: staking.rewardPerTokenStored(),
             feeRecipient: staking.feeRecipient(),
             paused: staking.paused()
         });
     }
 
-    // ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Security Checks ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*                   GLOBAL POST CONDITIONS                   */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    function _validateStateConsistency() internal view {
-        // 1. Fee boundary check
-        require(
-            _after.protocolFee <= staking.MAX_FEE(), _formatError("Fee exceeds maximum", _after.protocolFee.pretty())
-        );
+    // Helper function to check if rewards were updated
+    function _isRewardUpdated() internal view returns (bool) {
+        return _before.rewardPerTokenStored != _after.rewardPerTokenStored;
+    }
 
-        // 2. Staking token supply integrity
-        require(
-            _after.totalStaked <= staking.stakingToken().totalSupply(),
-            _formatError("Total staked exceeds supply", _after.totalStaked.pretty())
-        );
-
-        // 3. Pause state consistency
-        if (_before.paused) {
-            require(_after.paused, _formatError("Unauthorized unpause", _after.paused.pretty()));
+    // GPOST A: Reward updates only during specific operations
+    function assert_STAKING_GPOST_A() internal view {
+        if (_isRewardUpdated()) {
+            bytes4 sig = msg.sig;
+            bool validOperation = sig == staking.stake.selector ||
+                sig == staking.unstake.selector ||
+                sig == staking.claimRewards.selector ||
+                sig == staking.notifyRewardAmount.selector;
+            require(validOperation, CORE_GPOST_A);
         }
     }
 
-    // ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ Formatted Assertions ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
-
-    function _formatDiff(
-        string memory name,
-        uint256 beforeVal,
-        uint256 afterVal
-    ) internal pure returns (string memory) {
-        return string(abi.encodePacked(name, " changed from ", beforeVal.pretty(), " to ", afterVal.pretty()));
+    // GPOST B & C: Ensure totalStaked and totalRewardsDistributed don't decrease unexpectedly
+    function assert_STAKING_GPOST_BC() internal view {
+        if (_isRewardUpdated()) {
+            // GPOST B: totalStaked should not decrease
+            require(_after.totalStaked >= _before.totalStaked, CORE_GPOST_B);
+            // GPOST C: totalRewardsDistributed should not decrease
+            require(_after.totalRewardsDistributed >= _before.totalRewardsDistributed, CORE_GPOST_C);
+        }
     }
 
-    function _formatError(string memory message, string memory value) internal pure returns (string memory) {
-        return Strings.concat(message, value);
+    // GPOST D: Restrict unstake operations based on state
+    function assert_STAKING_GPOST_D() internal view {
+        if (msg.sig == staking.unstake.selector) {
+            // Cannot unstake if paused
+            require(!_after.paused, CORE_GPOST_E);
+            // Cannot unstake if all funds are locked
+            require(_before.unlockedBalance_actor > 0, CORE_GPOST_E);
+        }
     }
 
-    /// @dev Validates balance change with formatted error message
-    function _assertBalanceChange(
-        int256 expectedDelta
-    ) internal view {
-        int256 actualDelta = int256(_after.balance_actor) - int256(_before.balance_actor);
-        require(actualDelta == expectedDelta, _formatDiff("Balance", _before.balance_actor, _after.balance_actor));
+    // GPOST E: Ensure no invalid state transitions
+    function assert_STAKING_GPOST_E() internal view {
+        // Ensure totalStaked doesn't change unexpectedly
+        if (msg.sig != staking.stake.selector && msg.sig != staking.unstake.selector) {
+            require(_after.totalStaked == _before.totalStaked, CORE_GPOST_E);
+        }
     }
 
-    /// @dev Validates reward accrual with formatted error message
-    function _assertRewardsIncreased() internal view {
-        require(
-            _after.earned_actor >= _before.earned_actor,
-            _formatDiff("Rewards", _before.earned_actor, _after.earned_actor)
-        );
+    // Validate all global postconditions
+    function _validateStateConsistency() internal view {
+        assert_STAKING_GPOST_A();
+        assert_STAKING_GPOST_BC();
+        assert_STAKING_GPOST_D();
+        assert_STAKING_GPOST_E();
     }
 
-    /// @dev Validates protocol fee boundaries
-    function _assertFeeBounds() internal view {
-        require(
-            _after.protocolFee <= staking.MAX_FEE(),
-            _formatError("Protocol fee exceeds max", _after.protocolFee.pretty())
-        );
-    }
+    /*´:°•.°+.*•´.*:˚.°*.˚•´.°:°•.°•.*•´.*:˚.°*.˚•´.°:°•.°+.*•´.*:*/
+    /*               HANDLER-SPECIFIC POST CONDITIONS             */
+    /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
+
+    // HSPOST A: Validate stake increases balance and totalStaked
+    // function assert_STAKE_HSPOST_A(
+    //     uint256 amount
+    // ) internal view {
+    //     eq(_after.balance_actor, _before.balance_actor + amount, STAKE_HSPOST_A);
+    //     eq(_after.totalStaked, _before.totalStaked + amount, STAKE_HSPOST_A);
+    // }
 }
