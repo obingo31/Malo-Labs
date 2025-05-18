@@ -15,7 +15,7 @@
 	url = https://github.com/crytic/properties
 [submodule "contracts/lib/chimera"]
 	path = contracts/lib/chimera
-	url = https://github.com/recon-fuzz/chimera
+	url = https://github.com/Recon-Fuzz/chimera
 [submodule "contracts/lib/openzeppelin-contracts"]
 	path = contracts/lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
@@ -24,7 +24,7 @@
 	url = https://github.com/a16z/halmos-cheatcodes
 [submodule "contracts/lib/solmate"]
 	path = contracts/lib/solmate
-	url = https://github.com/transmissions11/solmate
+	url = https://github.com/rari-capital/solmate
 [submodule "contracts/lib/ds-test"]
 	path = contracts/lib/ds-test
 	url = https://github.com/dapphub/ds-test

@@ -6,7 +6,6 @@ import "src/Staker.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Actor} from "../InvariantTests/Actor.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
-import {IStaker} from "src/interfaces/IStaker.sol";
 import {console} from "forge-std/console.sol";
 
 contract StakerTest is Test {

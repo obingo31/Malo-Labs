@@ -20,7 +20,16 @@
     # Defines paths for Solidity imports.
     remappings = [
         "forge-std/=lib/forge-std/src/",
-        "@openzeppelin/=lib/openzeppelin-contracts/"
+        "@openzeppelin/=lib/openzeppelin-contracts/",
+        "openzeppelin-contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/",
+        "openzeppelin-contracts/=lib/openzeppelin-contracts/",
+        "openzeppelin/=lib/openzeppelin-contracts-upgradeable/contracts/",
+        "properties/=lib/properties/contracts/",
+        "@rari-capital/=lib/solmate/src/",
+        "setup-helpers/=lib/setup-helpers/src/",
+        "solmate/=lib/solmate/src/",
+        "weird-erc20/=lib/solmate/lib/weird-erc20/src/",
+        "@recon/=lib/setup-helpers/src/"
     ]
     # Specifies the exact version of Solidity to use, overriding auto-detection.
     solc = "0.8.23"  # Updated to 0.8.23

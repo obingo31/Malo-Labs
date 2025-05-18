@@ -5,18 +5,15 @@ import {Script, console} from "forge-std/Script.sol";
 import {Counter} from "../src/Counter.sol";
 
 contract CounterScript is Script {
+    Counter public counter;
+
     function setUp() public {}
 
-    function run() external returns (Counter) {
+    function run() public {
         vm.startBroadcast();
-        Counter counter = new Counter();
-        console.log("Counter deployed to:", address(counter));
-        vm.stopBroadcast();
 
-        return counter;
+        counter = new Counter();
+
+        vm.stopBroadcast();
     }
 }
-
-// forge script script/Counter.s.sol --rpc-url  127.0.0.1:8545 --broadcast --verify --slow
-
-// forge script script/Counter.s.sol --rpc-url 127.0.0.1:8545 --broadcast --private-key 0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6 --verify --slow
