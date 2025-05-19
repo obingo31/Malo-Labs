@@ -6,6 +6,7 @@ import {Strings, Pretty} from "./Pretty.sol";
 
 import {StakingPostconditions} from "./StakingPostconditions.sol";
 import {StakingInvariants} from "./StakingInvariants.sol";
+import {Merged} from "./Merged.sol";
 
 abstract contract BeforeAfter is Setup, StakingPostconditions, StakingInvariants {
     using Strings for string;
@@ -82,10 +83,8 @@ abstract contract BeforeAfter is Setup, StakingPostconditions, StakingInvariants
     function assert_STAKING_GPOST_A() internal view {
         if (_isRewardUpdated()) {
             bytes4 sig = msg.sig;
-            bool validOperation = sig == staking.stake.selector ||
-                sig == staking.unstake.selector ||
-                sig == staking.claimRewards.selector ||
-                sig == staking.notifyRewardAmount.selector;
+            bool validOperation = sig == staking.stake.selector || sig == staking.unstake.selector
+                || sig == staking.claimRewards.selector || sig == staking.notifyRewardAmount.selector;
             require(validOperation, CORE_GPOST_A);
         }
     }

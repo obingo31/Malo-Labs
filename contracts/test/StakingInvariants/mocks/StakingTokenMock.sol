@@ -338,7 +338,8 @@ contract StakingTokenMock {
     }
 
     // Mock implementation of approve
-    function approve( /*address spender, uint256 value*/ ) public view returns (bool) {
+    function approve(address spender, uint256 value) public returns (bool) {
+        emit Approval(msg.sender, spender, value);
         return _approveReturn_0;
     }
 

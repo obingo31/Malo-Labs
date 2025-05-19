@@ -12,7 +12,7 @@ abstract contract Properties is BeforeAfter, Asserts {
     // ███████║   ██║   ██║  ██║██║  ██╗██║██║ ╚████║╚██████╔╝
     // ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝
 
-    function invariant_CORE_INV_A() public {
+    function invariant_CORE_INV_A() internal override {
         uint256 totalBal;
         address[] memory actors = _getActors();
         for (uint256 i; i < actors.length; ++i) {
@@ -21,17 +21,17 @@ abstract contract Properties is BeforeAfter, Asserts {
         eq(totalBal, staking.totalStaked(), CORE_GPOST_A);
     }
 
-    function invariant_CORE_INV_B() public {
+    function invariant_CORE_INV_B() internal override {
         address actor = _getActor();
         uint256 totalBalance = staking.lockedBalanceOf(actor) + staking.unlockedBalanceOf(actor);
         eq(totalBalance, staking.balanceOf(actor), CORE_GPOST_B);
     }
 
-    function invariant_CORE_INV_C() public {
+    function invariant_CORE_INV_C() internal override {
         lte(staking.protocolFee(), staking.MAX_FEE(), CORE_GPOST_C);
     }
 
-    function invariant_CORE_INV_D() public {
+    function invariant_CORE_INV_D() internal override {
         t(staking.feeRecipient() != address(0), CORE_GPOST_D);
     }
 
@@ -42,7 +42,7 @@ abstract contract Properties is BeforeAfter, Asserts {
     // ██║  ██║███████╗╚███╔███╔╝██║  ██║██║  ██║██████╔╝
     // ╚═╝  ╚═╝╚══════╝ ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝
 
-    function invariant_REWARD_INV_A() public {
+    function invariant_REWARD_INV_A() internal override {
         uint256 rewards = staking.totalRewardsDistributed();
         uint256 balance = staking.maloToken().balanceOf(address(staking));
         lte(rewards, balance, REWARD_GPOST_A);
@@ -55,7 +55,7 @@ abstract contract Properties is BeforeAfter, Asserts {
     // ███████╗╚██████╔╝╚██████╗██║  ██╗██║██║ ╚████║╚██████╔╝
     // ╚══════╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝
 
-    function invariant_LOCK_INV_A() public {
+    function invariant_LOCK_INV_A() internal override {
         address[] memory actors = _getActors();
         uint256 totalLocked;
         for (uint256 i; i < actors.length; ++i) {

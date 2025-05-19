@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import {CryticAsserts} from "@chimera/CryticAsserts.sol";
-
 import {TargetFunctions} from "./TargetFunctions.sol";
 
 // medusa fuzz

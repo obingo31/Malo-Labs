@@ -6,5 +6,11 @@
     "solidity.formatter": "forge",
     "editor.formatOnSave": true,
     "solidity.compileUsingRemoteVersion": "0.8.23",
-    "testing.defaultGutterClickAction": "debug"
+    "testing.defaultGutterClickAction": "debug",
+    "solidity.remappings": [
+        "forge-std/=lib/forge-std/src/",
+        "@openzeppelin/=lib/openzeppelin-contracts/",
+        "chimera/=lib/setup-helpers/lib/chimera/src/",
+        "@chimera/=lib/setup-helpers/lib/chimera/src/"
+    ]
 }

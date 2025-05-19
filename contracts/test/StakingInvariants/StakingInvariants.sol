@@ -92,4 +92,64 @@ abstract contract StakingInvariants {
     string constant DELEGATE_INV_C = "DELEGATE_INV_C: slash preserves totalStaked and totalRewardsDistributed";
     string constant DELEGATE_INV_D = "DELEGATE_INV_D: transferAndUnstake reverts if amount exceeds lockedBalanceOf";
     string constant DELEGATE_INV_E = "DELEGATE_INV_E: transferAndUnstake reduces unlockedBalanceOf by amount";
+
+    // Storage for invariants - using function pointer type
+    function() internal[] internal _invariants;
+
+    // Function to add invariant
+    function _addInvariant(
+        function() internal inv
+    ) internal {
+        _invariants.push(inv);
+    }
+
+    /// === Core Invariant Functions === ///
+    function invariant_CORE_INV_A() internal virtual {
+        require(true, CORE_INV_A);
+    }
+
+    function invariant_CORE_INV_B() internal virtual {
+        require(true, CORE_INV_B);
+    }
+
+    function invariant_CORE_INV_C() internal virtual {
+        require(true, CORE_INV_C);
+    }
+
+    function invariant_CORE_INV_D() internal virtual {
+        require(true, CORE_INV_D);
+    }
+
+    function invariant_CORE_INV_E() internal virtual {
+        require(true, CORE_INV_E);
+    }
+
+    /// === Reward System Invariant Functions === ///
+    function invariant_REWARD_INV_A() internal virtual {
+        require(true, REWARD_INV_A);
+    }
+
+    function invariant_REWARD_INV_B() internal virtual {
+        require(true, REWARD_INV_B);
+    }
+
+    function invariant_REWARD_INV_C() internal virtual {
+        require(true, REWARD_INV_C);
+    }
+
+    function invariant_REWARD_INV_D() internal virtual {
+        require(true, REWARD_INV_D);
+    }
+
+    /// === Lock Mechanism Invariant Functions === ///
+    function invariant_LOCK_INV_A() internal virtual {
+        require(true, LOCK_INV_A);
+    }
+
+    // Function to check all invariants
+    function checkInvariants() internal virtual {
+        for (uint256 i = 0; i < _invariants.length; i++) {
+            _invariants[i]();
+        }
+    }
 }
