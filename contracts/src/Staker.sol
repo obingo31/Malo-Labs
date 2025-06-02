@@ -90,45 +90,70 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         emit RewardClaimed(msg.sender, rewardToken, reward);
     }
 
-    function addReward(
-        address rewardToken,
-        uint256 totalRewards,
-        uint256 duration
-    ) external onlyRole(REWARDS_ADMIN_ROLE) {
-        require(rewardToken != address(0), "Invalid reward token");
-        require(totalRewards > 0 && duration > 0, "Invalid parameters");
-        require(totalRewards % duration == 0, "TotalRewards must be divisible by duration");
+    // function addReward(
+    //     address rewardToken,
+    //     uint256 totalRewards,
+    //     uint256 duration
+    // ) external onlyRole(REWARDS_ADMIN_ROLE) {
+    //     require(rewardToken != address(0), "Invalid reward token");
+    //     require(totalRewards > 0 && duration > 0, "Invalid parameters");
+    //     require(totalRewards % duration == 0, "TotalRewards must be divisible by duration");
 
-        Reward storage reward = rewards[rewardToken];
-        if (reward.duration > 0) {
-            require(block.timestamp >= reward.lastUpdateTime + reward.duration, "Previous reward ongoing");
-        }
+    //     Reward storage reward = rewards[rewardToken];
+    //     if (reward.duration > 0) {
+    //         require(block.timestamp >= reward.lastUpdateTime + reward.duration, "Previous reward ongoing");
+    //     }
 
-        // Handle leftover tokens
-        uint256 currentBalance = IERC20(rewardToken).balanceOf(address(this));
+    //     // Handle leftover tokens
+    //     uint256 currentBalance = IERC20(rewardToken).balanceOf(address(this));
+    //     require(totalRewards > currentBalance, "Insufficient new rewards");
+    //     uint256 adjustedTotal = totalRewards - currentBalance;
+
+    //     // Prevent duplicate entries
+    //     if (!isRewardToken[rewardToken]) {
+    //         bool isAlreadyInArray = false;
+    //         for (uint256 i = 0; i < rewardTokens.length; i++) {
+    //             if (address(rewardTokens[i]) == rewardToken) {
+    //                 isAlreadyInArray = true;
+    //                 break;
+    //             }
+    //         }
+    //         if (!isAlreadyInArray) {
+    //             rewardTokens.push(IERC20(rewardToken));
+    //         }
+    //         isRewardToken[rewardToken] = true;
+    //     }
+
+    //     uint256 rate = adjustedTotal / duration;
+    //     rewards[rewardToken] = Reward(duration, rate, block.timestamp, 0);
+
+    //     IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), totalRewards);
+    //     emit RewardAdded(rewardToken, adjustedTotal, duration);
+    // }
+
+    // In Staker.sol
+    function addReward(address token, uint256 totalRewards, uint256 duration) external onlyRole(REWARDS_ADMIN_ROLE) {
+        require(duration > 0, "Invalid duration");
+
+        // Calculate actual needed amount
+        uint256 currentBalance = IERC20(token).balanceOf(address(this));
         require(totalRewards > currentBalance, "Insufficient new rewards");
         uint256 adjustedTotal = totalRewards - currentBalance;
 
-        // Prevent duplicate entries
-        if (!isRewardToken[rewardToken]) {
-            bool isAlreadyInArray = false;
-            for (uint256 i = 0; i < rewardTokens.length; i++) {
-                if (address(rewardTokens[i]) == rewardToken) {
-                    isAlreadyInArray = true;
-                    break;
-                }
-            }
-            if (!isAlreadyInArray) {
-                rewardTokens.push(IERC20(rewardToken));
-            }
-            isRewardToken[rewardToken] = true;
-        }
+        // Validate divisibility
+        require(adjustedTotal % duration == 0, "Adjusted amount not divisible by duration");
 
-        uint256 rate = adjustedTotal / duration;
-        rewards[rewardToken] = Reward(duration, rate, block.timestamp, 0);
+        // Store reward data
+        rewards[token] = Reward({
+            duration: duration,
+            rate: adjustedTotal / duration,
+            lastUpdateTime: block.timestamp,
+            rewardPerTokenStored: 0
+        });
 
-        IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), totalRewards);
-        emit RewardAdded(rewardToken, adjustedTotal, duration);
+        // Transfer only the needed amount
+        IERC20(token).safeTransferFrom(msg.sender, address(this), adjustedTotal);
+        emit RewardAdded(token, adjustedTotal, duration);
     }
 
     function removeRewardToken(
@@ -206,7 +231,6 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         return _stakedBalances[user];
     }
 
-    // Optional: Batch claim rewards
     function claimAllRewards() external nonReentrant {
         _updateRewards(msg.sender);
 

@@ -1,0 +1,15 @@
+name: Fuzzing Tests
+on: [push, pull_request]
+
+jobs:
+  echidna:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Echidna
+      run: |
+        pip install echidna-parade
+    - name: Run Fuzzing Tests
+      run: |
+        chmod +x ./test_runner.sh
+        ./test_runner.sh

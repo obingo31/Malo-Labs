@@ -4,11 +4,11 @@ pragma solidity ^0.8.20;
 import {Setup} from "./Setup.sol";
 import {Strings, Pretty} from "./Pretty.sol";
 
-import {StakingPostconditions} from "./StakingPostconditions.sol";
-import {StakingInvariants} from "./StakingInvariants.sol";
+// import {StakingPostconditions} from "./StakingPostconditions.sol";
+// import {StakingInvariants} from "./StakingInvariants.sol";
 import {Merged} from "./Merged.sol";
 
-abstract contract BeforeAfter is Setup, StakingPostconditions, StakingInvariants {
+abstract contract BeforeAfter is Setup, Merged {
     using Strings for string;
     using Pretty for uint256;
     using Pretty for bool;

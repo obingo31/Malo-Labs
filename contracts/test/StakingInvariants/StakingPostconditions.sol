@@ -83,43 +83,43 @@ abstract contract StakingPostconditions {
     string constant TOKEN_GPOST_B = "TOKEN_GPOST_B: rewardToken balance must cover pending rewards";
     string constant TOKEN_HSPOST_C = "TOKEN_HSPOST_C: stakingToken allowance must be reset when unstaking";
 
-    // Storage for postconditions - using function pointer type
-    function() internal[] internal _postconditions;
+    // // Storage for postconditions - using function pointer type
+    // function() internal[] internal _postconditions;
 
-    // Function to add postcondition
-    function _addPostcondition(
-        function() internal post
-    ) internal {
-        _postconditions.push(post);
-    }
+    // // Function to add postcondition
+    // function _addPostcondition(
+    //     function() internal post
+    // ) internal {
+    //     _postconditions.push(post);
+    // }
 
-    // Core Postcondition Functions
-    function postcondition_CORE_POST_A() internal virtual {
-        require(true, CORE_GPOST_A);
-    }
+    // // Core Postcondition Functions
+    // function postcondition_CORE_POST_A() internal virtual {
+    //     require(true, CORE_GPOST_A);
+    // }
 
-    function postcondition_CORE_POST_B() internal virtual {
-        require(true, CORE_GPOST_B);
-    }
+    // function postcondition_CORE_POST_B() internal virtual {
+    //     require(true, CORE_GPOST_B);
+    // }
 
-    function postcondition_CORE_POST_C() internal virtual {
-        require(true, CORE_GPOST_C);
-    }
+    // function postcondition_CORE_POST_C() internal virtual {
+    //     require(true, CORE_GPOST_C);
+    // }
 
-    // Reward Postcondition Functions
-    function postcondition_REWARD_POST_A() internal virtual {
-        require(true, TOKEN_GPOST_B);
-    }
+    // // Reward Postcondition Functions
+    // function postcondition_REWARD_POST_A() internal virtual {
+    //     require(true, TOKEN_GPOST_B);
+    // }
 
-    // Lock Postcondition Functions
-    function postcondition_LOCK_POST_A() internal virtual {
-        require(true, TOKEN_GPOST_A);
-    }
+    // // Lock Postcondition Functions
+    // function postcondition_LOCK_POST_A() internal virtual {
+    //     require(true, TOKEN_GPOST_A);
+    // }
 
-    // Function to check all postconditions
-    function checkPostconditions() internal virtual {
-        for (uint256 i = 0; i < _postconditions.length; i++) {
-            _postconditions[i]();
-        }
-    }
+    // // Function to check all postconditions
+    // function checkPostconditions() internal virtual {
+    //     for (uint256 i = 0; i < _postconditions.length; i++) {
+    //         _postconditions[i]();
+    //     }
+    // }
 }

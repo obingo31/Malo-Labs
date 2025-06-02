@@ -39,11 +39,7 @@ abstract contract Setup is BaseSetup, ActorManager, AssetManager, Utils {
         _newAsset(6);
 
         // 2. Initialize actors (admin + 2 test actors)
-        address[3] memory initialActors = [
-            address(this), // Default admin/owner
-            address(0x411c3), // Actor A
-            address(0xb0b) // Actor B
-        ];
+        address[3] memory initialActors = [address(this), address(0x411c3), address(0xb0b)];
 
         for (uint256 i = 0; i < initialActors.length; i++) {
             _addActor(initialActors[i]);

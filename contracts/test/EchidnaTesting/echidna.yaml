@@ -1,0 +1,12 @@
+# test/EchidnaTesting/echidna.yaml
+testMode: assertion
+testLimit: 50000
+seqLen: 1
+shrinkLimit: 100
+contract: TestStaker
+solc: "0.8.20"
+coverage: true
+checkAsserts: true
+corpus: true
+
+corpusDir: "./test/EchidnaTesting/coverage-echidna"
