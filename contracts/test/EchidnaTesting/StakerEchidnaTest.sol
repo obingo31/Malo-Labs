@@ -79,9 +79,5 @@ contract StakerEchidnaTest {
         return true;
     }
 
-    // Helper function to bound a value within min and max.
-    // (Use this for fuzzed input constraints elsewhere if needed.)
-    function bound(uint256 value, uint256 min, uint256 max) internal pure returns (uint256) {
-        return min + (value % (max - min + 1));
-    }
+    
 }
