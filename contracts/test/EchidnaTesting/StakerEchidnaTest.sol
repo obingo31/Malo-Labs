@@ -78,6 +78,4 @@ contract StakerEchidnaTest {
         }
         return true;
     }
-
-    
 }

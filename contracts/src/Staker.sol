@@ -79,7 +79,7 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
     function claimRewards(
         address rewardToken
     ) external nonReentrant {
-        require(isRewardToken[rewardToken], "Invalid reward token");
+        require(rewards[rewardToken].duration > 0, "Invalid reward token");
         _updateRewards(msg.sender);
 
         uint256 reward = rewardsEarned[msg.sender][rewardToken];
@@ -90,70 +90,43 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         emit RewardClaimed(msg.sender, rewardToken, reward);
     }
 
-    // function addReward(
-    //     address rewardToken,
-    //     uint256 totalRewards,
-    //     uint256 duration
-    // ) external onlyRole(REWARDS_ADMIN_ROLE) {
-    //     require(rewardToken != address(0), "Invalid reward token");
-    //     require(totalRewards > 0 && duration > 0, "Invalid parameters");
-    //     require(totalRewards % duration == 0, "TotalRewards must be divisible by duration");
+    function addReward(
+        address rewardToken,
+        uint256 totalRewards,
+        uint256 duration
+    ) external onlyRole(REWARDS_ADMIN_ROLE) {
+        require(rewardToken != address(0), "Invalid reward token");
+        require(totalRewards > 0 && duration > 0, "Invalid parameters");
 
-    //     Reward storage reward = rewards[rewardToken];
-    //     if (reward.duration > 0) {
-    //         require(block.timestamp >= reward.lastUpdateTime + reward.duration, "Previous reward ongoing");
-    //     }
+        Reward storage reward = rewards[rewardToken];
+        if (reward.duration > 0) {
+            require(block.timestamp >= reward.lastUpdateTime + reward.duration, "Previous reward ongoing");
+            uint256 endTime = reward.lastUpdateTime + reward.duration;
+            uint256 timeElapsed = endTime - reward.lastUpdateTime;
+            if (_totalStaked > 0) {
+                reward.rewardPerTokenStored += (timeElapsed * reward.rate * 1e18) / _totalStaked;
+            }
+            reward.lastUpdateTime = endTime;
+        }
 
-    //     // Handle leftover tokens
-    //     uint256 currentBalance = IERC20(rewardToken).balanceOf(address(this));
-    //     require(totalRewards > currentBalance, "Insufficient new rewards");
-    //     uint256 adjustedTotal = totalRewards - currentBalance;
+        uint256 currentBalance = IERC20(rewardToken).balanceOf(address(this));
+        require(totalRewards >= currentBalance, "Insufficient new rewards");
+        uint256 amountToTransfer = totalRewards - currentBalance;
 
-    //     // Prevent duplicate entries
-    //     if (!isRewardToken[rewardToken]) {
-    //         bool isAlreadyInArray = false;
-    //         for (uint256 i = 0; i < rewardTokens.length; i++) {
-    //             if (address(rewardTokens[i]) == rewardToken) {
-    //                 isAlreadyInArray = true;
-    //                 break;
-    //             }
-    //         }
-    //         if (!isAlreadyInArray) {
-    //             rewardTokens.push(IERC20(rewardToken));
-    //         }
-    //         isRewardToken[rewardToken] = true;
-    //     }
+        if (!isRewardToken[rewardToken]) {
+            rewardTokens.push(IERC20(rewardToken));
+            isRewardToken[rewardToken] = true;
+        }
 
-    //     uint256 rate = adjustedTotal / duration;
-    //     rewards[rewardToken] = Reward(duration, rate, block.timestamp, 0);
+        uint256 rate = totalRewards / duration;
+        reward.duration = duration;
+        reward.rate = rate;
+        reward.lastUpdateTime = block.timestamp;
 
-    //     IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), totalRewards);
-    //     emit RewardAdded(rewardToken, adjustedTotal, duration);
-    // }
-
-    // In Staker.sol
-    function addReward(address token, uint256 totalRewards, uint256 duration) external onlyRole(REWARDS_ADMIN_ROLE) {
-        require(duration > 0, "Invalid duration");
-
-        // Calculate actual needed amount
-        uint256 currentBalance = IERC20(token).balanceOf(address(this));
-        require(totalRewards > currentBalance, "Insufficient new rewards");
-        uint256 adjustedTotal = totalRewards - currentBalance;
-
-        // Validate divisibility
-        require(adjustedTotal % duration == 0, "Adjusted amount not divisible by duration");
-
-        // Store reward data
-        rewards[token] = Reward({
-            duration: duration,
-            rate: adjustedTotal / duration,
-            lastUpdateTime: block.timestamp,
-            rewardPerTokenStored: 0
-        });
-
-        // Transfer only the needed amount
-        IERC20(token).safeTransferFrom(msg.sender, address(this), adjustedTotal);
-        emit RewardAdded(token, adjustedTotal, duration);
+        if (amountToTransfer > 0) {
+            IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), amountToTransfer);
+        }
+        emit RewardAdded(rewardToken, totalRewards, duration);
     }
 
     function removeRewardToken(
@@ -166,14 +139,11 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
 
         isRewardToken[rewardToken] = false;
 
-        // Remove all instances from array
-        uint256 i = 0;
-        while (i < rewardTokens.length) {
+        for (uint256 i = 0; i < rewardTokens.length; i++) {
             if (address(rewardTokens[i]) == rewardToken) {
                 rewardTokens[i] = rewardTokens[rewardTokens.length - 1];
                 rewardTokens.pop();
-            } else {
-                i++;
+                break;
             }
         }
         emit RewardTokenRemoved(rewardToken);
@@ -217,8 +187,13 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
     }
 
     function earned(address user, address rewardToken) public view returns (uint256) {
-        uint256 userRewardPerToken = _rewardPerToken(rewardToken) - userRewardPerTokenPaid[user][rewardToken];
-        return (_stakedBalances[user] * userRewardPerToken) / 1e18 + rewardsEarned[user][rewardToken];
+        uint256 currentRewardPerToken = _rewardPerToken(rewardToken);
+        uint256 paid = userRewardPerTokenPaid[user][rewardToken];
+        if (currentRewardPerToken < paid) return rewardsEarned[user][rewardToken];
+
+        uint256 delta = currentRewardPerToken - paid;
+        uint256 newRewards = (_stakedBalances[user] * delta) / 1e18;
+        return newRewards + rewardsEarned[user][rewardToken];
     }
 
     function totalStaked() external view returns (uint256) {
@@ -237,7 +212,7 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
         for (uint256 i = 0; i < rewardTokens.length; i++) {
             address token = address(rewardTokens[i]);
             uint256 reward = rewardsEarned[msg.sender][token];
-            if (reward > 0 && isRewardToken[token]) {
+            if (reward > 0) {
                 rewardsEarned[msg.sender][token] = 0;
                 IERC20(token).safeTransfer(msg.sender, reward);
                 emit RewardClaimed(msg.sender, token, reward);

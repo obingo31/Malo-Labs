@@ -1,12 +1,12 @@
-# test/EchidnaTesting/echidna.yaml
-testMode: assertion
+testMode: property
 testLimit: 50000
 seqLen: 1
-shrinkLimit: 100
-contract: TestStaker
+shrinkLimit: 500
 solc: "0.8.20"
 coverage: true
-checkAsserts: true
 corpus: true
-
-corpusDir: "./test/EchidnaTesting/coverage-echidna"
+deployer: "0x10000"
+sender: ["0x10000", "0x20000", "0x30000"]
+corpusDir: "./test/EchidnaTesting/corpus/E2E"
+testLimit: 100000
+testTimeout: 100000
