@@ -477,7 +477,7 @@ contract E2E is PropertiesAsserts {
     }
 
     // Sum of all balances <= total supply
-    function test_ERC20_sumBalancesNotExceedSupply() public view returns (bool) {
+    function echidna_ERC20_sumBalancesNotExceedSupply() public view returns (bool) {
         uint256 sum;
         for (uint i = 0; i < actors.length; i++) {
             sum += stakingToken.balanceOf(address(actors[i]));
@@ -485,5 +485,66 @@ contract E2E is PropertiesAsserts {
         
         sum += stakingToken.balanceOf(address(staker));
         return sum <= stakingToken.totalSupply();
+    }
+
+    // Address zero should have zero balance
+    function test_ERC20external_zeroAddressBalance() public {
+        assertEq(
+            stakingToken.balanceOf(address(0)),
+            0,
+            "Address zero balance not equal to zero"
+        );
+    }
+
+    // Transfers to zero address should not be allowed
+    function echidna_ERC20external_transferToZeroAddress() public returns (bool) {
+   
+        if (stakingToken.totalSupply() == 0) return true;
+
+        uint256 balance = stakingToken.balanceOf(address(this));
+        if (balance == 0) return true;
+
+        try stakingToken.transfer(address(0), balance) {
+            
+            return false;
+        } catch {
+            
+            return true;
+        }
+    }
+
+    // Select an actor by index, clamped to valid range
+    function _selectActor(uint8 index) internal  returns (StakerActor actor) {
+        uint256 actorIndex = clampBetween(uint256(index), 0, actors.length - 1);
+        return actors[actorIndex];
+    }
+
+    // Overflow check for two uint256 values
+    function _overflowCheck(uint256 a, uint256 b) internal pure {
+        uint256 c;
+        unchecked {
+            c = a + b;
+        }
+        require(c >= a, "OVERFLOW!");
+    }
+
+    // Get staking token balance of the staker contract
+    function _stakingTokenBalanceOfStaker() internal view returns (uint256 assets) {
+        assets = stakingToken.balanceOf(address(staker));
+    }
+
+    function echidna_ERC20_sumBalancesNoOverflow() public view returns (bool) {
+    uint256 sum = 0;
+    for (uint i = 0; i < actors.length; i++) {
+        // overflow check utility before adding
+        _overflowCheck(sum, stakingToken.balanceOf(address(actors[i])));
+        sum += stakingToken.balanceOf(address(actors[i]));
+    }
+    // Check overflow for adding staker contract's balance
+    _overflowCheck(sum, stakingToken.balanceOf(address(staker)));
+    sum += stakingToken.balanceOf(address(staker));
+
+    // The sum should never exceed total supply
+    return sum <= stakingToken.totalSupply();
     }
 }
