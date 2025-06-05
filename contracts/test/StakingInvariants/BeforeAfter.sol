@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
+import "forge-std/Test.sol";
+
 import {Setup} from "./Setup.sol";
 import {Strings, Pretty} from "./Pretty.sol";
 
@@ -8,7 +10,7 @@ import {Strings, Pretty} from "./Pretty.sol";
 // import {StakingInvariants} from "./StakingInvariants.sol";
 import {Merged} from "./Merged.sol";
 
-abstract contract BeforeAfter is Setup, Merged {
+abstract contract BeforeAfter is Setup, Merged, Test {
     using Strings for string;
     using Pretty for uint256;
     using Pretty for bool;
@@ -79,46 +81,38 @@ abstract contract BeforeAfter is Setup, Merged {
         return _before.rewardPerTokenStored != _after.rewardPerTokenStored;
     }
 
-    // GPOST A: Reward updates only during specific operations
-    function assert_STAKING_GPOST_A() internal view {
+    function assert_STAKING_GPOST_A() internal {
         if (_isRewardUpdated()) {
-            bytes4 sig = msg.sig;
-            bool validOperation = sig == staking.stake.selector || sig == staking.unstake.selector
-                || sig == staking.claimRewards.selector || sig == staking.notifyRewardAmount.selector;
-            require(validOperation, CORE_GPOST_A);
+            assertTrue(
+                msg.sig == staking.stake.selector || msg.sig == staking.unstake.selector
+                    || msg.sig == staking.claimRewards.selector || msg.sig == staking.notifyRewardAmount.selector,
+                CORE_GPOST_A
+            );
         }
     }
 
-    // GPOST B & C: Ensure totalStaked and totalRewardsDistributed don't decrease unexpectedly
-    function assert_STAKING_GPOST_BC() internal view {
+    function assert_STAKING_GPOST_BC() internal {
         if (_isRewardUpdated()) {
-            // GPOST B: totalStaked should not decrease
-            require(_after.totalStaked >= _before.totalStaked, CORE_GPOST_B);
-            // GPOST C: totalRewardsDistributed should not decrease
-            require(_after.totalRewardsDistributed >= _before.totalRewardsDistributed, CORE_GPOST_C);
+            assertTrue(_after.totalStaked >= _before.totalStaked, CORE_GPOST_B);
+            assertTrue(_after.totalRewardsDistributed >= _before.totalRewardsDistributed, CORE_GPOST_C);
         }
     }
 
-    // GPOST D: Restrict unstake operations based on state
-    function assert_STAKING_GPOST_D() internal view {
+    function assert_STAKING_GPOST_D() internal {
         if (msg.sig == staking.unstake.selector) {
-            // Cannot unstake if paused
-            require(!_after.paused, CORE_GPOST_E);
-            // Cannot unstake if all funds are locked
-            require(_before.unlockedBalance_actor > 0, CORE_GPOST_E);
+            assertTrue(!_after.paused, CORE_GPOST_D1);
+            assertTrue(_before.unlockedBalance_actor > 0, CORE_GPOST_D2);
         }
     }
 
-    // GPOST E: Ensure no invalid state transitions
-    function assert_STAKING_GPOST_E() internal view {
-        // Ensure totalStaked doesn't change unexpectedly
+    function assert_STAKING_GPOST_E() internal {
         if (msg.sig != staking.stake.selector && msg.sig != staking.unstake.selector) {
-            require(_after.totalStaked == _before.totalStaked, CORE_GPOST_E);
+            assertTrue(_after.totalStaked == _before.totalStaked, CORE_GPOST_E);
         }
     }
 
     // Validate all global postconditions
-    function _validateStateConsistency() internal view {
+    function _validateStateConsistency() internal {
         assert_STAKING_GPOST_A();
         assert_STAKING_GPOST_BC();
         assert_STAKING_GPOST_D();
@@ -129,11 +123,21 @@ abstract contract BeforeAfter is Setup, Merged {
     /*               HANDLER-SPECIFIC POST CONDITIONS             */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    // HSPOST A: Validate stake increases balance and totalStaked
-    // function assert_STAKE_HSPOST_A(
-    //     uint256 amount
-    // ) internal view {
-    //     eq(_after.balance_actor, _before.balance_actor + amount, STAKE_HSPOST_A);
-    //     eq(_after.totalStaked, _before.totalStaked + amount, STAKE_HSPOST_A);
-    // }
+    string constant STAKE_HSPOST =
+        "STAKE_HSPOST_A: After staking, actor's balance and total staked should increase by the staked amount";
+
+    function assert_STAKE_HSPOST_A(
+        uint256 amount
+    ) internal {
+        assertTrue(_after.balance_actor == _before.balance_actor + amount, STAKE_HSPOST);
+        assertTrue(_after.totalStaked == _before.totalStaked + amount, STAKE_HSPOST);
+    }
 }
+
+string constant CORE_GPOST_A = "CORE_GPOST_A";
+string constant CORE_GPOST_B = "CORE_GPOST_B";
+string constant CORE_GPOST_C = "CORE_GPOST_C";
+string constant CORE_GPOST_D = "CORE_GPOST_D";
+string constant CORE_GPOST_E = "CORE_GPOST_E";
+string constant CORE_GPOST_D1 = "CORE_GPOST_D1: unstake should not be paused";
+string constant CORE_GPOST_D2 = "CORE_GPOST_D2: actor must have unlocked balance to unstake";

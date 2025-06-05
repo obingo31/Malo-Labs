@@ -13,5 +13,4 @@ contract CryticToFoundry is Test {
     function setUp() public {
         e2e = new E2E();
     }
-
 }

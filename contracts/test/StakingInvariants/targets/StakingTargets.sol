@@ -19,12 +19,12 @@ abstract contract StakingTargets is BaseTargetFunctions, Properties {
     /*               HANDLER-SPECIFIC POST CONDITIONS             */
     /*.•°:°.´+˚.*°.˚:*.´•*.+°.•°:´*.´•*.•°.•°:°.´:•˚°.*°.˚:*.´+°.•*/
 
-    function assert_STAKE_HSPOST_A(
-        uint256 amount
-    ) internal {
-        eq(_after.balance_actor, _before.balance_actor + amount, STAKE_HSPOST_A);
-        eq(_after.totalStaked, _before.totalStaked + amount, STAKE_HSPOST_A);
-    }
+    // function assert_STAKE_HSPOST_A(
+    //     uint256 amount
+    // ) internal {
+    //     eq(_after.balance_actor, _before.balance_actor + amount, STAKE_HSPOST_A);
+    //     eq(_after.totalStaked, _before.totalStaked + amount, STAKE_HSPOST_A);
+    // }
 
     // Add a constant error message for unstake postconditions
     // string constant STAKE_HSPOST_C = "Unstake postcondition failed";

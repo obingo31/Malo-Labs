@@ -535,4 +535,11 @@ contract Staking is Constants, AccessControl, ReentrancyGuard, Pausable, Rewards
 
         return ILockManager(_lockManager).canUnlock(_user, amount);
     }
+
+    // Add this function inside your Staking contract
+    function rewardTokens() public view returns (IERC20[] memory) {
+        IERC20[] memory tokens = new IERC20[](1);
+        tokens[0] = maloToken;
+        return tokens;
+    }
 }
