@@ -6,6 +6,10 @@ A Web3 decentralized application (dApp) built on Ethereum.
 
 DApp [Malo Labs](https://my-dapp-mauve.vercel.app/)
 
+## Docs
+
+[Whitepaper](https://malo-labs.gitbook.io/documentation)
+
 ## Overview
 
 This project implements smart contracts and decentralized applications using Solidity and modern Web3 development tools.
