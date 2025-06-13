@@ -10,6 +10,12 @@ DApp [Malo Labs](https://my-dapp-mauve.vercel.app/)
 
 [Whitepaper](https://malo-labs.gitbook.io/documentation)
 
+## ParserParse Echidna or Medusa call traces to Foundry test functions with ease.
+
+![Kratos](https://github.com/user-attachments/assets/147d00be-c70e-4fe7-87b0-5143cb82ba45)
+
+
+
 ## Overview
 
 This project implements smart contracts and decentralized applications using Solidity and modern Web3 development tools.
