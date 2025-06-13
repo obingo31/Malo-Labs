@@ -10,7 +10,9 @@ DApp [Malo Labs](https://my-dapp-mauve.vercel.app/)
 
 [Whitepaper](https://malo-labs.gitbook.io/documentation)
 
-## ParserParse Echidna or Medusa call traces to Foundry test functions with ease.
+## Malo Labs Invariant Testing Tool
+
+Parse Echidna or Medusa call traces to Foundry test functions with ease.
 
 ![Kratos](https://github.com/user-attachments/assets/147d00be-c70e-4fe7-87b0-5143cb82ba45)
 
