@@ -38,6 +38,8 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
     uint256 private _totalStaked;
     mapping(address => uint256) private _stakedBalances;
 
+    uint256 private constant MAX_REWARD_DURATION = 3650 days;
+
     constructor(address _stakingToken, address _admin, address _pauseGuardian) {
         require(_stakingToken != address(0), "Invalid staking token");
         require(_admin != address(0), "Invalid admin address");
@@ -97,6 +99,7 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
     ) external onlyRole(REWARDS_ADMIN_ROLE) {
         require(rewardToken != address(0), "Invalid reward token");
         require(totalRewards > 0 && duration > 0, "Invalid parameters");
+        require(duration <= MAX_REWARD_DURATION, "Duration exceeds maximum");
 
         Reward storage reward = rewards[rewardToken];
         if (reward.duration > 0) {

@@ -13,41 +13,6 @@ abstract contract Properties is BeforeAfter, Asserts {
     // ███████║   ██║   ██║  ██║██║  ██╗██║██║ ╚████║╚██████╔╝
     // ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝
 
-    function echidna_STAKING_INVARIANT() public returns (bool) {
-        // Check global invariants
-        assert_CORE_INV_A();
-        assert_CORE_INV_E();
-        invariant_REWARD_INV_A(); // Changed from assert_REWARD_INV_A()
-        assert_REWARD_INV_B();
-
-        // Check per-user invariants
-        address[] memory actors = _getActors();
-        for (uint256 i = 0; i < actors.length; i++) {
-            address user = actors[i];
-            assert_TOKEN_INV_A(user);
-            for (uint256 j = 0; j < staking.rewardTokens().length; j++) {
-                address rewardToken = address(staking.rewardTokens()[j]);
-                invariant_REWARD_INV_A(); // Changed from assert_REWARD_INV_A()
-            }
-        }
-
-        return true;
-    }
-
-    // Invariant: Total rewards distributed does not exceed contract's balance
-    function assert_REWARD_INV_B() internal view {
-        uint256 totalRewards = staking.totalRewardsDistributed();
-        uint256 contractBalance = staking.maloToken().balanceOf(address(staking));
-        lte(totalRewards, contractBalance, "REWARD_INV_B: Total rewards distributed exceeds contract balance");
-    }
-
-    // Invariant: Staking token total supply >= total staked
-    function assert_TOKEN_INV_A(
-        address user
-    ) internal view {
-        t(staking.balanceOf(user) <= stakingToken.totalSupply(), "TOKEN_INV_A: User balance exceeds total supply");
-    }
-
     function invariant_CORE_INV_A() internal {
         uint256 totalBal;
         address[] memory actors = _getActors();

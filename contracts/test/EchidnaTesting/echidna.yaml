@@ -1,12 +1,10 @@
-testMode: property
-testLimit: 50000
-seqLen: 1
+testMode: assertion
+seqLen: 150
 shrinkLimit: 500
-solc: "0.8.20"
 coverage: true
 corpus: true
 deployer: "0x10000"
 sender: ["0x10000", "0x20000", "0x30000"]
 corpusDir: "./test/EchidnaTesting/corpus/E2E"
-testLimit: 100000
+testLimit: 200000 
 testTimeout: 100000
