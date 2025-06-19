@@ -47,8 +47,7 @@ contract Staker is IStaker, AccessControl, ReentrancyGuard, Pausable {
 
     function stake(
         uint256 amount
-    ) external nonReentrant whenNotPaused {
-        require(amount > 0, "Cannot stake 0");
+    ) external nonReentrant whenNotPaused validAmount(amount) {
         _updateRewards(msg.sender);
 
         _totalStaked += amount;
@@ -60,8 +59,7 @@ contract Staker is IStaker, AccessControl, ReentrancyGuard, Pausable {
 
     function withdraw(
         uint256 amount
-    ) external nonReentrant whenNotPaused {
-        require(amount > 0, "Cannot withdraw 0");
+    ) external nonReentrant whenNotPaused validAmount(amount) {
         require(_stakedBalances[msg.sender] >= amount, "Insufficient balance");
         _updateRewards(msg.sender);
 
@@ -74,7 +72,7 @@ contract Staker is IStaker, AccessControl, ReentrancyGuard, Pausable {
 
     function claimRewards(
         address rewardToken
-    ) external nonReentrant {
+    ) external nonReentrant validAddress(rewardToken) {
         require(rewards[rewardToken].duration > 0, "Invalid reward token");
         _updateRewards(msg.sender);
 
@@ -90,9 +88,7 @@ contract Staker is IStaker, AccessControl, ReentrancyGuard, Pausable {
         address rewardToken,
         uint256 totalRewards,
         uint256 duration
-    ) external onlyRole(REWARDS_ADMIN_ROLE) {
-        require(rewardToken != address(0), "Invalid reward token");
-        require(totalRewards > 0 && duration > 0, "Invalid parameters");
+    ) external onlyRole(REWARDS_ADMIN_ROLE) validAddress(rewardToken) validAmount(totalRewards) validAmount(duration) {
         require(duration <= MAX_REWARD_DURATION, "Duration exceeds maximum");
 
         Reward storage reward = rewards[rewardToken];
@@ -128,7 +124,7 @@ contract Staker is IStaker, AccessControl, ReentrancyGuard, Pausable {
 
     function removeRewardToken(
         address rewardToken
-    ) external onlyRole(REWARDS_ADMIN_ROLE) {
+    ) external onlyRole(REWARDS_ADMIN_ROLE) validAddress(rewardToken) {
         require(isRewardToken[rewardToken], "Not a reward token");
         require(
             block.timestamp >= rewards[rewardToken].lastUpdateTime + rewards[rewardToken].duration, "Reward ongoing"
@@ -223,5 +219,27 @@ contract Staker is IStaker, AccessControl, ReentrancyGuard, Pausable {
 
     function unpause() external onlyRole(PAUSE_GUARDIAN_ROLE) {
         _unpause();
+    }
+
+    /**
+     * @notice Modifier to check if the provided address is valid.
+     * @param _address to be checked for validity.
+     */
+    modifier validAddress(
+        address _address
+    ) {
+        require(_address != address(0), "Invalid reward token");
+        _;
+    }
+
+    /**
+     * @notice Modifier to check if the provided amount is valid.
+     * @param _amount to be checked for validity.
+     */
+    modifier validAmount(
+        uint256 _amount
+    ) {
+        require(_amount > 0, "Cannot withdraw 0 or stake 0");
+        _;
     }
 }

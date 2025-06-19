@@ -278,7 +278,7 @@ contract StakerTest is Test {
     // Tests if withdraw reverts correctly when invalid amount
     // forge test --match-contract StakerTest --match-test test_withdraw_when_invalidAmount -vvv
     function test_withdraw_when_invalidAmount() public {
-        vm.expectRevert(bytes("Cannot withdraw 0"));
+        vm.expectRevert(bytes("Cannot withdraw 0 or stake 0"));
         staker.withdraw(0);
     }
 
@@ -302,14 +302,14 @@ contract StakerTest is Test {
         staker.claimRewards(address(rewardToken1));
     }
 
-     // Tests if claimRewards fails if user has already withdrawn 
+    // Tests if claimRewards fails if user has already withdrawn
     // forge test --match-contract StakerTest --match-test test_claimRewards_when_alreadyWithdrawn
     function test_claimRewards_when_alreadyWithdrawn() public {
         uint256 stakeAmount = 100 ether;
         uint256 rewardAmount = 1000 ether;
         uint256 duration = 30 days;
         _addReward(address(rewardToken1), rewardAmount, duration);
-       
+
         stakingToken.mint(address(this), stakeAmount);
         stakingToken.approve(address(staker), stakeAmount);
         staker.stake(stakeAmount);
