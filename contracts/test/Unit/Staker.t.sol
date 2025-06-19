@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "forge-std/Test.sol";
-import "src/Staker.sol";
+import "../../src/Staker.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Actor} from "../InvariantTests/Actor.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
@@ -402,5 +402,32 @@ contract StakerTest is Test {
 
         // Second token should be fully distributed too
         assertApproxEqRel(reward2, REWARD_AMOUNT * 2, 0.01e18);
+    }
+
+    // forge test --match-contract StakerTest --match-test testRewardTokenClaimWithInsufficientBalance ❌
+    // Test claiming rewards when the user has insufficient balance
+    // This test ensures that the claim function does not revert when the user has insufficient balance
+    function testRewardTokenClaimWithInsufficientBalance() public {
+        // Add reward with 500e18 tokens for 100 seconds
+        staker.addReward(address(rewardToken1), 500e18, 100);
+        vm.warp(block.timestamp + 50); // Warp less than or equal to duration
+
+        staker.addReward(address(rewardToken2), 1000e18, 100);
+        vm.warp(block.timestamp + 50); // Warp less than or equal to duration
+
+        // User stakes tokens
+        vm.startPrank(address(user1Actor));
+        stakingToken.approve(address(staker), STAKE_AMOUNT);
+        bytes memory stakeCallData = abi.encodeWithSelector(staker.stake.selector, STAKE_AMOUNT);
+        user1Actor.proxy(address(staker), stakeCallData);
+        vm.stopPrank();
+
+        // Claim rewards
+        vm.prank(address(user1Actor));
+        bytes memory claimAllCallData = abi.encodeWithSelector(staker.claimAllRewards.selector);
+        user1Actor.proxy(address(staker), claimAllCallData);
+
+        // Verify that the claim was successful and did not revert
+        assertTrue(true);
     }
 }

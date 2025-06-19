@@ -6,19 +6,13 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import {IStaker} from "./interfaces/IStaker.sol";
 
-contract Staker is AccessControl, ReentrancyGuard, Pausable {
+contract Staker is IStaker, AccessControl, ReentrancyGuard, Pausable {
     using SafeERC20 for IERC20;
 
     bytes32 public constant REWARDS_ADMIN_ROLE = keccak256("REWARDS_ADMIN_ROLE");
     bytes32 public constant PAUSE_GUARDIAN_ROLE = keccak256("PAUSE_GUARDIAN_ROLE");
-
-    // Events
-    event Staked(address indexed user, uint256 amount);
-    event Withdrawn(address indexed user, uint256 amount);
-    event RewardAdded(address indexed token, uint256 amount, uint256 duration);
-    event RewardClaimed(address indexed user, address indexed token, uint256 amount);
-    event RewardTokenRemoved(address indexed token);
 
     IERC20 public immutable stakingToken;
     IERC20[] public rewardTokens;
@@ -221,5 +215,13 @@ contract Staker is AccessControl, ReentrancyGuard, Pausable {
                 emit RewardClaimed(msg.sender, token, reward);
             }
         }
+    }
+
+    function pause() external onlyRole(PAUSE_GUARDIAN_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(PAUSE_GUARDIAN_ROLE) {
+        _unpause();
     }
 }
